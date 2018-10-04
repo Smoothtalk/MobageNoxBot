@@ -44,19 +44,27 @@ class Vision:
         Matches template image in a target grayscaled image
         """
 
-        w, h = template.shape[::-1]
-
         res = cv2.matchTemplate(img_grayscale, template, cv2.TM_CCOEFF_NORMED)
-
         matches = np.where(res >= threshold)
+        return matches
 
-        for point in zip(*matches[::-1]):
-            cv2.rectangle(img_grayscale, point, (point[0]+w, point[1]+h), (0,255,255), 2)
+    def scaled_find_template(self, name, threshold, scales, image=None):
+        if image is None:
+            if self.frame is None:
+                self.refresh_frame()
 
-        cv2.imshow('detected', img_grayscale)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+            image = self.frame
 
+        initial_template = self.templates[name]
+        for scale in scales:
+            scaled_template = cv2.resize(initial_template, (0,0), fx=scale, fy=scale)
+            matches = self.match_template(
+                image,
+                scaled_template,
+                threshold
+            )
+            if np.shape(matches)[1] >= 1:
+                return matches
         return matches
 
     def find_template(self, name, threshold, image=None):
@@ -74,8 +82,9 @@ class Vision:
 def getWindowObject(appPath):
     app = pywinauto.Application().connect(path=appPath)
     #window = app.top_window()
-    window = app.window(title_re="NoxPlayer.*")
-    return window
+    allElements = app.window(title_re="NoxPlayer.*") #returns window spec object
+    childWindow = allElements.child_window(title="ScreenBoardClassWindow")
+    return childWindow
 
 def bringAppToFront(appWindow):
     #bring window into foreground
@@ -86,7 +95,7 @@ def bringAppToFront(appWindow):
 
 def getWindowDimensions(appWindow):
     w = appWindow.rectangle().width()
-    h = appWindow.rectangle().height() - 30 #window element bar subtraction
+    h = appWindow.rectangle().height()
     x = appWindow.rectangle().left
     y = appWindow.rectangle().top
 
@@ -104,5 +113,7 @@ noxWindowDimensions = getWindowDimensions(noxWindowObject)
 
 vision = Vision()
 vision.setMonitor(noxWindowDimensions)
-matches = vision.find_template('Gear', 0.9)
+scales = [1.5, 1.0]
+matches = vision.scaled_find_template('Gear', 0.8, scales=scales)
+# matches = vision.find_template('Gear', 0.9)
 print (np.shape(matches)[1] >= 1)
