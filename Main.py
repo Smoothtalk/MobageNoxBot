@@ -9,6 +9,7 @@ from mss import mss
 from PIL import Image
 
 APP_PATH = "D:\\Program Files\\Nox\\bin\\Nox.exe"
+UI_WIDTH_720 = 1280
 
 class Vision:
     def __init__(self):
@@ -79,6 +80,10 @@ class Vision:
             threshold
         )
 
+    def find_scale_template(self, currentWidth):
+        scale = currentWidth / UI_WIDTH_720
+        return scale
+
 def getWindowObject(appPath):
     app = pywinauto.Application().connect(path=appPath)
     #window = app.top_window()
@@ -113,7 +118,11 @@ noxWindowDimensions = getWindowDimensions(noxWindowObject)
 
 vision = Vision()
 vision.setMonitor(noxWindowDimensions)
-scales = [1.5, 1.0]
+
+UIscale = vision.find_scale_template(noxWindowDimensions['width'])
+scales = [1.5, 1.0, UIscale]
+
 matches = vision.scaled_find_template('Gear', 0.8, scales=scales)
 # matches = vision.find_template('Gear', 0.9)
+
 print (np.shape(matches)[1] >= 1)
