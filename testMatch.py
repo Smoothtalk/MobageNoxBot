@@ -10,15 +10,17 @@ from PIL import Image
 
 APP_PATH = "D:\\Program Files\\Nox\\bin\\Nox.exe"
 UI_WIDTH_720 = 1280
-SHOW_MATCH = False
+SHOW_MATCH = True
 
 class Vision:
     def __init__(self):
         self.static_templates = {
-            'T4-Box'    : 'assets/T4-Box.png',
-            'Gear'      : 'assets/Gear.png',
-            'Akagi'     : 'assets/Akagi.png',
-            'Akashi'    : 'assets/Akashi.png'
+            'T4-Box'      : 'assets/T4-Box.png',
+            'Gear'        : 'assets/Gear.png',
+            'Akagi'       : 'assets/Akagi.png',
+            'Akashi'      : 'assets/Akashi.png',
+            'Aircraft1'   : 'assets/Ac1.png',
+            'Battleship1' : 'assets/Bs1.png'
         }
         self.templates = { k: cv2.imread(v, 0) for (k, v) in self.static_templates.items() }
         self.screen = mss()
@@ -96,10 +98,13 @@ class Vision:
                 threshold
             )
             if np.shape(matches)[1] >= 1:
+                print (matches)
                 if(SHOW_MATCH == True):
                     w, h = scaled_template.shape[::-1]
                     for pt in zip(*matches[::-1]):
-                        cv2.rectangle(image, pt, (pt[0] + w, pt[1] + h), (0,255,255), 2)
+                        # cv2.rectangle(image, pt, (pt[0] + w, pt[1] + h), (0,255,255), 1)
+                        # midpointX = int(pt[0] + (0.5*w))
+                        # midpointY = int(pt[1] + (0.5*h)+30)
                     cv2.imshow('image',image)
                     cv2.waitKey(0)
                     cv2.destroyAllWindows()
@@ -165,6 +170,6 @@ scales = [UIscale]
 # matches = vision.scaled_find_template('Akagi', 0.5, scales=scales)
 # matches = vision.find_template('Gear', 0.9)
 
-matches = vision.scaled_find_template('Akashi', 0.5, scales=scales)
+matches = vision.scaled_find_template('Battleship1', 0.5, scales=scales)
 
 print (np.shape(matches)[1] >= 1)
