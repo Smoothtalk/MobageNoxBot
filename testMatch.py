@@ -10,7 +10,7 @@ from PIL import Image
 
 APP_PATH = "D:\\Program Files\\Nox\\bin\\Nox.exe"
 UI_WIDTH_720 = 1280
-SHOW_MATCH = True
+SHOW_MATCH = False
 
 class Vision:
     def __init__(self):
@@ -98,13 +98,12 @@ class Vision:
                 threshold
             )
             if np.shape(matches)[1] >= 1:
-                print (matches)
                 if(SHOW_MATCH == True):
                     w, h = scaled_template.shape[::-1]
                     for pt in zip(*matches[::-1]):
-                        # cv2.rectangle(image, pt, (pt[0] + w, pt[1] + h), (0,255,255), 1)
-                        # midpointX = int(pt[0] + (0.5*w))
-                        # midpointY = int(pt[1] + (0.5*h)+30)
+                        cv2.rectangle(image, pt, (pt[0] + w, pt[1] + h), (0,255,255), 1)
+                        midpointX = int(pt[0] + (0.5*w))
+                        midpointY = int(pt[1] + (0.5*h)+30)
                     cv2.imshow('image',image)
                     cv2.waitKey(0)
                     cv2.destroyAllWindows()
@@ -167,9 +166,18 @@ vision.setMonitor(noxWindowDimensions)
 UIscale = vision.find_scale(noxWindowDimensions['width'])
 scales = [UIscale]
 
+initial_template = vision.templates['Aircraft1']
+scaled_template = cv2.resize(initial_template, (0,0), fx=UIscale, fy=UIscale)
+w, h = scaled_template.shape[::-1]
 # matches = vision.scaled_find_template('Akagi', 0.5, scales=scales)
 # matches = vision.find_template('Gear', 0.9)
 
-matches = vision.scaled_find_template('Battleship1', 0.5, scales=scales)
-
+# TODO only works in top left corner now
+matches = vision.scaled_find_template('Aircraft1', 0.5, scales=scales)
+# print (np.shape(matches)[1] + noxWindowDimensions['left'])
+# print (np.shape(matches)[0] + noxWindowDimensions['top'])
+xCord = matches[1][0]+int(w*0.5)
+yCord = matches[0][0]+int(h*0.5)
+print (str(xCord) + ',' + str(yCord))
+# pywinauto.mouse.click(coords=(xCord,yCord))
 print (np.shape(matches)[1] >= 1)
