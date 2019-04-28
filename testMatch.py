@@ -3,6 +3,7 @@ import win32gui
 import cv2
 import numpy as np
 import time
+import random
 
 from matplotlib import pyplot as plt
 from mss import mss
@@ -10,7 +11,7 @@ from PIL import Image
 
 APP_PATH = "D:\\Program Files\\Nox\\bin\\Nox.exe"
 UI_WIDTH_720 = 1280
-SHOW_MATCH = False
+SHOW_MATCH = True
 
 class Vision:
     def __init__(self):
@@ -20,7 +21,10 @@ class Vision:
             'Akagi'       : 'assets/Akagi.png',
             'Akashi'      : 'assets/Akashi.png',
             'Aircraft1'   : 'assets/Ac1.png',
-            'Battleship1' : 'assets/Bs1.png'
+            'Battleship1' : 'assets/Bs1.png',
+            'Kizuna1'     : 'assets/KZ1.png',
+            'Kizuna2'     : 'assets/KZ2.png',
+            'Kizuna3'     : 'assets/KZ3.png'
         }
         self.templates = { k: cv2.imread(v, 0) for (k, v) in self.static_templates.items() }
         self.screen = mss()
@@ -48,30 +52,6 @@ class Vision:
     def save_screenshot(self):
         img = self.take_screenshot()
         cv2.imwrite('assets/test1.png', img)
-
-    # def match_template2(self, img_grayscale, template, threshold):
-    #     """
-    #     Matches template image in a target grayscaled image
-    #     """
-    #
-    #     # res = cv2.matchTemplate(img_grayscale, template, cv2.TM_CCOEFF_NORMED)
-    #     # matches = np.where(res >= threshold)
-    #     # return matches
-    #
-    #     # Initiate ORB detector
-    #     orb = cv2.ORB_create()
-    #     # find the keypoints and descriptors with ORB
-    #     kp1, des1 = orb.detectAndCompute(template,None)
-    #     kp2, des2 = orb.detectAndCompute(img_grayscale,None)
-    #     # create BFMatcher object
-    #     bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-    #     # Match descriptors.
-    #     matches = bf.match(des1,des2) #dmmatch
-    #     # Sort them in the order of their distance.
-    #     matches = sorted(matches, key = lambda x:x.distance)
-    #     # Draw first 10 matches.
-    #     img3 = cv2.drawMatches(template, kp1, img_grayscale, kp2,matches[:10], None, flags=2)
-    #     plt.imshow(img3),plt.show()
 
     def match_template(self, img_grayscale, template, threshold):
         """
@@ -126,6 +106,30 @@ class Vision:
         scale = currentWidth / UI_WIDTH_720
         return scale
 
+    # def match_template2(self, img_grayscale, template, threshold):
+    #     """
+    #     Matches template image in a target grayscaled image
+    #     """
+    #
+    #     # res = cv2.matchTemplate(img_grayscale, template, cv2.TM_CCOEFF_NORMED)
+    #     # matches = np.where(res >= threshold)
+    #     # return matches
+    #
+    #     # Initiate ORB detector
+    #     orb = cv2.ORB_create()
+    #     # find the keypoints and descriptors with ORB
+    #     kp1, des1 = orb.detectAndCompute(template,None)
+    #     kp2, des2 = orb.detectAndCompute(img_grayscale,None)
+    #     # create BFMatcher object
+    #     bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+    #     # Match descriptors.
+    #     matches = bf.match(des1,des2) #dmmatch
+    #     # Sort them in the order of their distance.
+    #     matches = sorted(matches, key = lambda x:x.distance)
+    #     # Draw first 10 matches.
+    #     img3 = cv2.drawMatches(template, kp1, img_grayscale, kp2,matches[:10], None, flags=2)
+    #     plt.imshow(img3),plt.show()
+
 def getWindowObject(appPath):
     app = pywinauto.Application().connect(path=appPath)
     #window = app.top_window()
@@ -154,6 +158,14 @@ def getWindowDimensions(appWindow):
     windowObj = {'top': y, 'left': x, 'width': w, 'height': h}
     return windowObj
 
+def checkPoints(newPoint, w, h):
+    for point in matched:
+        if (abs(newPoint[0] - point[0]) > w or abs(newPoint[1] - point[1]) > h):
+            isNewPoint = True
+        else:
+            isNewPoint = False
+    return isNewPoint
+
 noxWindowObject = getWindowObject(APP_PATH)
 bringAppToFront(noxWindowObject)
 noxWindowDimensions = getWindowDimensions(noxWindowObject)
@@ -161,23 +173,88 @@ noxWindowDimensions = getWindowDimensions(noxWindowObject)
 vision = Vision()
 vision.setMonitor(noxWindowDimensions)
 
-#vision.save_screenshot()
+vision.save_screenshot()
 
 UIscale = vision.find_scale(noxWindowDimensions['width'])
 scales = [UIscale]
+matched = []
 
-initial_template = vision.templates['Aircraft1']
+initial_template = vision.templates['Kizuna1']
 scaled_template = cv2.resize(initial_template, (0,0), fx=UIscale, fy=UIscale)
 w, h = scaled_template.shape[::-1]
 # matches = vision.scaled_find_template('Akagi', 0.5, scales=scales)
 # matches = vision.find_template('Gear', 0.9)
 
 # TODO only works in top left corner now
-matches = vision.scaled_find_template('Aircraft1', 0.5, scales=scales)
+matches = vision.scaled_find_template('Kizuna1', 0.65, scales=scales)
 # print (np.shape(matches)[1] + noxWindowDimensions['left'])
 # print (np.shape(matches)[0] + noxWindowDimensions['top'])
-xCord = matches[1][0]+int(w*0.5)
-yCord = matches[0][0]+int(h*0.5)
-print (str(xCord) + ',' + str(yCord))
-# pywinauto.mouse.click(coords=(xCord,yCord))
-print (np.shape(matches)[1] >= 1)
+
+for pt in zip(*matches[::-1]):
+    # add the template size to point
+    realPointX = pt[0] + int(w*0.5)
+    realPointY = pt[1] + int(h*0.5)
+    newRealPoint = (realPointX,realPointY)
+
+    if(len(matched) >= 1):
+        isNewPoint = checkPoints(newRealPoint, w, h)
+        if (isNewPoint == True):
+            matched.append(newRealPoint)
+    else:
+        matched.append(newRealPoint)
+
+initial_template = vision.templates['Kizuna2']
+scaled_template = cv2.resize(initial_template, (0,0), fx=UIscale, fy=UIscale)
+w, h = scaled_template.shape[::-1]
+# matches = vision.scaled_find_template('Akagi', 0.5, scales=scales)
+# matches = vision.find_template('Gear', 0.9)
+
+# TODO only works in top left corner now
+matches = vision.scaled_find_template('Kizuna2', 0.65, scales=scales)
+# print (np.shape(matches)[1] + noxWindowDimensions['left'])
+# print (np.shape(matches)[0] + noxWindowDimensions['top'])
+
+for pt in zip(*matches[::-1]):
+    # add the template size to point
+    realPointX = pt[0] + int(w*0.5)
+    realPointY = pt[1] + int(h*0.5)
+    newRealPoint = (realPointX,realPointY)
+
+    if(len(matched) >= 1):
+        isNewPoint = checkPoints(newRealPoint, w, h)
+        if (isNewPoint == True):
+            matched.append(newRealPoint)
+    else:
+        matched.append(newRealPoint)
+
+initial_template = vision.templates['Kizuna3']
+scaled_template = cv2.resize(initial_template, (0,0), fx=UIscale, fy=UIscale)
+w, h = scaled_template.shape[::-1]
+# matches = vision.scaled_find_template('Akagi', 0.5, scales=scales)
+# matches = vision.find_template('Gear', 0.9)
+
+# TODO only works in top left corner now
+matches = vision.scaled_find_template('Kizuna3', 0.65, scales=scales)
+# print (np.shape(matches)[1] + noxWindowDimensions['left'])
+# print (np.shape(matches)[0] + noxWindowDimensions['top'])
+
+for pt in zip(*matches[::-1]):
+    # add the template size to point
+    realPointX = pt[0] + int(w*0.5)
+    realPointY = pt[1] + int(h*0.5)
+    newRealPoint = (realPointX,realPointY)
+
+    if(len(matched) >= 1):
+        isNewPoint = checkPoints(newRealPoint, w, h)
+        if (isNewPoint == True):
+            matched.append(newRealPoint)
+    else:
+        matched.append(newRealPoint)
+
+print(matched)
+
+randNumb = random.randint(1, len(matched))
+print (matched[randNumb-1][0],matched[randNumb-1][1])
+#pywinauto.mouse.click(coords=(matched[randNumb][0],matched[randNumb][1]))
+
+#print (np.shape(matches)[1] >= 1)
