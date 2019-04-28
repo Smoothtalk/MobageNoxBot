@@ -164,6 +164,7 @@ def checkPoints(newPoint, w, h):
             isNewPoint = True
         else:
             isNewPoint = False
+
     return isNewPoint
 
 noxWindowObject = getWindowObject(APP_PATH)
@@ -179,82 +180,30 @@ UIscale = vision.find_scale(noxWindowDimensions['width'])
 scales = [UIscale]
 matched = []
 
-initial_template = vision.templates['Kizuna1']
-scaled_template = cv2.resize(initial_template, (0,0), fx=UIscale, fy=UIscale)
-w, h = scaled_template.shape[::-1]
-# matches = vision.scaled_find_template('Akagi', 0.5, scales=scales)
-# matches = vision.find_template('Gear', 0.9)
+for template in vision.templates:
+    initial_template = vision.templates[template]
+    scaled_template = cv2.resize(initial_template, (0,0), fx=UIscale, fy=UIscale)
+    w, h = scaled_template.shape[::-1]
 
-# TODO only works in top left corner now
-matches = vision.scaled_find_template('Kizuna1', 0.65, scales=scales)
-# print (np.shape(matches)[1] + noxWindowDimensions['left'])
-# print (np.shape(matches)[0] + noxWindowDimensions['top'])
+    matches = vision.scaled_find_template(template, 0.70, scales=scales)
 
-for pt in zip(*matches[::-1]):
-    # add the template size to point
-    realPointX = pt[0] + int(w*0.5)
-    realPointY = pt[1] + int(h*0.5)
-    newRealPoint = (realPointX,realPointY)
+    for pt in zip(*matches[::-1]):
+        # add the template size to point
+        realPointX = pt[0] + int(w*0.5)
+        realPointY = pt[1] + int(h*0.5)
+        newRealPoint = (realPointX,realPointY)
 
-    if(len(matched) >= 1):
-        isNewPoint = checkPoints(newRealPoint, w, h)
-        if (isNewPoint == True):
+        if(len(matched) >= 1):
+            isNewPoint = checkPoints(newRealPoint, w, h)
+            if (isNewPoint == True):
+                matched.append(newRealPoint)
+        else:
             matched.append(newRealPoint)
-    else:
-        matched.append(newRealPoint)
-
-initial_template = vision.templates['Kizuna2']
-scaled_template = cv2.resize(initial_template, (0,0), fx=UIscale, fy=UIscale)
-w, h = scaled_template.shape[::-1]
-# matches = vision.scaled_find_template('Akagi', 0.5, scales=scales)
-# matches = vision.find_template('Gear', 0.9)
-
-# TODO only works in top left corner now
-matches = vision.scaled_find_template('Kizuna2', 0.65, scales=scales)
-# print (np.shape(matches)[1] + noxWindowDimensions['left'])
-# print (np.shape(matches)[0] + noxWindowDimensions['top'])
-
-for pt in zip(*matches[::-1]):
-    # add the template size to point
-    realPointX = pt[0] + int(w*0.5)
-    realPointY = pt[1] + int(h*0.5)
-    newRealPoint = (realPointX,realPointY)
-
-    if(len(matched) >= 1):
-        isNewPoint = checkPoints(newRealPoint, w, h)
-        if (isNewPoint == True):
-            matched.append(newRealPoint)
-    else:
-        matched.append(newRealPoint)
-
-initial_template = vision.templates['Kizuna3']
-scaled_template = cv2.resize(initial_template, (0,0), fx=UIscale, fy=UIscale)
-w, h = scaled_template.shape[::-1]
-# matches = vision.scaled_find_template('Akagi', 0.5, scales=scales)
-# matches = vision.find_template('Gear', 0.9)
-
-# TODO only works in top left corner now
-matches = vision.scaled_find_template('Kizuna3', 0.65, scales=scales)
-# print (np.shape(matches)[1] + noxWindowDimensions['left'])
-# print (np.shape(matches)[0] + noxWindowDimensions['top'])
-
-for pt in zip(*matches[::-1]):
-    # add the template size to point
-    realPointX = pt[0] + int(w*0.5)
-    realPointY = pt[1] + int(h*0.5)
-    newRealPoint = (realPointX,realPointY)
-
-    if(len(matched) >= 1):
-        isNewPoint = checkPoints(newRealPoint, w, h)
-        if (isNewPoint == True):
-            matched.append(newRealPoint)
-    else:
-        matched.append(newRealPoint)
 
 print(matched)
 
-randNumb = random.randint(1, len(matched))
-print (matched[randNumb-1][0],matched[randNumb-1][1])
+# randNumb = random.randint(1, len(matched))
+# print (matched[randNumb-1][0],matched[randNumb-1][1])
 #pywinauto.mouse.click(coords=(matched[randNumb][0],matched[randNumb][1]))
 
 #print (np.shape(matches)[1] >= 1)
