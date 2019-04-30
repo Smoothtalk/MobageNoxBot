@@ -11,7 +11,7 @@ from PIL import Image
 
 APP_PATH = "D:\\Program Files\\Nox\\bin\\Nox.exe"
 UI_WIDTH_720 = 1280
-SHOW_MATCH = True
+SHOW_MATCH = False
 
 class Vision:
     def __init__(self):
@@ -24,7 +24,12 @@ class Vision:
             'Battleship1' : 'assets/Bs1.png',
             'Kizuna1'     : 'assets/KZ1.png',
             'Kizuna2'     : 'assets/KZ2.png',
-            'Kizuna3'     : 'assets/KZ3.png'
+            'Kizuna3'     : 'assets/KZ3.png',
+            'Kizuna4'     : 'assets/KZ4.png',
+            'Kizuna5'     : 'assets/KZ5.png',
+            'startBattle' : 'assets/BattleStart.png',
+            'endBattle'   : 'assets/BtFin.png',
+            'confirm'     : 'assets/Confirm.png'
         }
         self.templates = { k: cv2.imread(v, 0) for (k, v) in self.static_templates.items() }
         self.screen = mss()
@@ -72,6 +77,7 @@ class Vision:
         initial_template = self.templates[name]
         for scale in scales:
             scaled_template = cv2.resize(initial_template, (0,0), fx=scale, fy=scale)
+            print ('attempting to match...')
             matches = self.match_template(
                 image,
                 scaled_template,
@@ -87,6 +93,7 @@ class Vision:
                     cv2.imshow('image',image)
                     cv2.waitKey(0)
                     cv2.destroyAllWindows()
+                print ('in matched scaled')
                 return matches
         return matches
 
@@ -105,30 +112,6 @@ class Vision:
     def find_scale(self, currentWidth):
         scale = currentWidth / UI_WIDTH_720
         return scale
-
-    # def match_template2(self, img_grayscale, template, threshold):
-    #     """
-    #     Matches template image in a target grayscaled image
-    #     """
-    #
-    #     # res = cv2.matchTemplate(img_grayscale, template, cv2.TM_CCOEFF_NORMED)
-    #     # matches = np.where(res >= threshold)
-    #     # return matches
-    #
-    #     # Initiate ORB detector
-    #     orb = cv2.ORB_create()
-    #     # find the keypoints and descriptors with ORB
-    #     kp1, des1 = orb.detectAndCompute(template,None)
-    #     kp2, des2 = orb.detectAndCompute(img_grayscale,None)
-    #     # create BFMatcher object
-    #     bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-    #     # Match descriptors.
-    #     matches = bf.match(des1,des2) #dmmatch
-    #     # Sort them in the order of their distance.
-    #     matches = sorted(matches, key = lambda x:x.distance)
-    #     # Draw first 10 matches.
-    #     img3 = cv2.drawMatches(template, kp1, img_grayscale, kp2,matches[:10], None, flags=2)
-    #     plt.imshow(img3),plt.show()
 
 def getWindowObject(appPath):
     app = pywinauto.Application().connect(path=appPath)
@@ -158,14 +141,127 @@ def getWindowDimensions(appWindow):
     windowObj = {'top': y, 'left': x, 'width': w, 'height': h}
     return windowObj
 
-def checkPoints(newPoint, w, h):
+#TODO
+def checkPoints(newPoint, matched, w, h):
+    isNewPoint = True
     for point in matched:
-        if (abs(newPoint[0] - point[0]) > w or abs(newPoint[1] - point[1]) > h):
-            isNewPoint = True
-        else:
+        if (abs(newPoint[0] - point[0]) < (w*0.5) and abs(newPoint[1] - point[1]) < (h*0.5)):
             isNewPoint = False
-
     return isNewPoint
+
+def startBattle():
+    vision = Vision()
+    vision.setMonitor(noxWindowDimensions)
+
+    UIscale = vision.find_scale(noxWindowDimensions['width'])
+    scales = [UIscale]
+
+    initial_template = vision.templates['startBattle']
+    scaled_template = cv2.resize(initial_template, (0,0), fx=UIscale, fy=UIscale)
+    w, h = scaled_template.shape[::-1]
+    matches = vision.scaled_find_template('startBattle', 0.70, scales=scales)
+
+    points = []
+    for pt in zip(*matches[::-1]):
+        # add the template size to point
+        print (pt)
+        realPointX = pt[0] + int(w*0.5)
+        realPointY = pt[1] + int(h*0.5)
+        newRealPoint = (realPointX,realPointY)
+
+        if(len(points) >= 1):
+            isNewPoint = checkPoints(newRealPoint, points, w, h)
+            if (isNewPoint == True):
+                points.append(newRealPoint)
+        else:
+            points.append(newRealPoint)
+    print (points)
+    if(len(points) > 0):
+        print (points)
+        pywinauto.mouse.click(coords=(points[0]))
+
+def inBattle():
+    vision = Vision()
+    vision.setMonitor(noxWindowDimensions)
+
+    UIscale = vision.find_scale(noxWindowDimensions['width'])
+    scales = [UIscale]
+
+    initial_template = vision.templates['endBattle']
+    scaled_template = cv2.resize(initial_template, (0,0), fx=UIscale, fy=UIscale)
+    w, h = scaled_template.shape[::-1]
+    matches = vision.scaled_find_template('endBattle', 0.50, scales=scales)
+
+    points = []
+    battling = True
+    while(battling == True):
+        print('In Battle')
+        for pt in zip(*matches[::-1]):
+            # add the template size to point
+            realPointX = pt[0] + int(w*0.5)
+            realPointY = pt[1] + int(h*0.5)
+            newRealPoint = (realPointX,realPointY)
+
+            if(len(points) >= 1):
+                isNewPoint = checkPoints(newRealPoint, points, w, h)
+                if (isNewPoint == True):
+                    points.append(newRealPoint)
+            else:
+                points.append(newRealPoint)
+
+        if(len(points) > 0):
+            print (points)
+            battling = False
+
+        vision = Vision()
+        vision.setMonitor(noxWindowDimensions)
+
+        UIscale = vision.find_scale(noxWindowDimensions['width'])
+        scales = [UIscale]
+
+        initial_template = vision.templates['endBattle']
+        scaled_template = cv2.resize(initial_template, (0,0), fx=UIscale, fy=UIscale)
+        w, h = scaled_template.shape[::-1]
+        matches = vision.scaled_find_template('endBattle', 0.50, scales=scales)
+        time.sleep(5)
+
+    print ('Out of battle loop')
+    print (points)
+    pywinauto.mouse.click(coords=(points[0]))
+    time.sleep(5)
+    pywinauto.mouse.click(coords=(points[0]))
+    time.sleep(3)
+    pywinauto.mouse.click(coords=(points[0]))
+
+def endBattle():
+    vision = Vision()
+    vision.setMonitor(noxWindowDimensions)
+
+    UIscale = vision.find_scale(noxWindowDimensions['width'])
+    scales = [UIscale]
+
+    initial_template = vision.templates['confirm']
+    scaled_template = cv2.resize(initial_template, (0,0), fx=UIscale, fy=UIscale)
+    w, h = scaled_template.shape[::-1]
+    matches = vision.scaled_find_template('confirm', 0.70, scales=scales)
+
+    points = []
+    for pt in zip(*matches[::-1]):
+        # add the template size to point
+        realPointX = pt[0] + int(w*0.5)
+        realPointY = pt[1] + int(h*0.5)
+        newRealPoint = (realPointX,realPointY)
+
+        if(len(points) >= 1):
+            isNewPoint = checkPoints(newRealPoint, points, w, h)
+            if (isNewPoint == True):
+                points.append(newRealPoint)
+        else:
+            points.append(newRealPoint)
+
+    print (points)
+    pywinauto.mouse.click(coords=(points[0]))
+    time.sleep(5)
 
 noxWindowObject = getWindowObject(APP_PATH)
 bringAppToFront(noxWindowObject)
@@ -174,7 +270,7 @@ noxWindowDimensions = getWindowDimensions(noxWindowObject)
 vision = Vision()
 vision.setMonitor(noxWindowDimensions)
 
-vision.save_screenshot()
+# vision.save_screenshot()
 
 UIscale = vision.find_scale(noxWindowDimensions['width'])
 scales = [UIscale]
@@ -194,16 +290,58 @@ for template in vision.templates:
         newRealPoint = (realPointX,realPointY)
 
         if(len(matched) >= 1):
-            isNewPoint = checkPoints(newRealPoint, w, h)
+            isNewPoint = checkPoints(newRealPoint, matched, w, h)
             if (isNewPoint == True):
                 matched.append(newRealPoint)
         else:
             matched.append(newRealPoint)
-
 print(matched)
 
-# randNumb = random.randint(1, len(matched))
-# print (matched[randNumb-1][0],matched[randNumb-1][1])
-#pywinauto.mouse.click(coords=(matched[randNumb][0],matched[randNumb][1]))
+randNumb = random.randint(0, len(matched)-1)
+print (matched[randNumb])
+pywinauto.mouse.click(coords=(matched[randNumb][0],matched[randNumb][1]))
+del matched[randNumb]
+time.sleep(7)
+startBattle()
+inBattle()
+endBattle()
+
+randNumb = random.randint(0, len(matched)-1)
+print (matched[randNumb])
+pywinauto.mouse.click(coords=(matched[randNumb][0],matched[randNumb][1]))
+del matched[randNumb]
+time.sleep(7)
+startBattle()
+inBattle()
+endBattle()
+
+randNumb = random.randint(0, len(matched)-1)
+print (matched[randNumb])
+pywinauto.mouse.click(coords=(matched[randNumb][0],matched[randNumb][1]))
+del matched[randNumb]
+time.sleep(7)
+startBattle()
+inBattle()
+endBattle()
+
+randNumb = random.randint(0, len(matched)-1)
+print (matched[randNumb])
+pywinauto.mouse.click(coords=(matched[randNumb][0],matched[randNumb][1]))
+del matched[randNumb]
+time.sleep(7)
+startBattle()
+inBattle()
+endBattle()
+
+randNumb = random.randint(0, len(matched)-1)
+print (matched[randNumb])
+pywinauto.mouse.click(coords=(matched[randNumb][0],matched[randNumb][1]))
+del matched[randNumb]
+time.sleep(7)
+startBattle()
+inBattle()
+endBattle()
+
+print(matched)
 
 #print (np.shape(matches)[1] >= 1)
