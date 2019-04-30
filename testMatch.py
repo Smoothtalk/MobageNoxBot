@@ -77,7 +77,6 @@ class Vision:
         initial_template = self.templates[name]
         for scale in scales:
             scaled_template = cv2.resize(initial_template, (0,0), fx=scale, fy=scale)
-            print ('attempting to match...')
             matches = self.match_template(
                 image,
                 scaled_template,
@@ -93,7 +92,6 @@ class Vision:
                     cv2.imshow('image',image)
                     cv2.waitKey(0)
                     cv2.destroyAllWindows()
-                print ('in matched scaled')
                 return matches
         return matches
 
@@ -149,61 +147,101 @@ def checkPoints(newPoint, matched, w, h):
             isNewPoint = False
     return isNewPoint
 
-def startBattle():
+def initalize(noxWindowDimensions, templateName, matchPercentage):
+    returnDict = {}
+
     vision = Vision()
     vision.setMonitor(noxWindowDimensions)
 
     UIscale = vision.find_scale(noxWindowDimensions['width'])
     scales = [UIscale]
 
-    initial_template = vision.templates['startBattle']
+    initial_template = vision.templates[templateName]
     scaled_template = cv2.resize(initial_template, (0,0), fx=UIscale, fy=UIscale)
     w, h = scaled_template.shape[::-1]
-    matches = vision.scaled_find_template('startBattle', 0.70, scales=scales)
+    matches = vision.scaled_find_template('templateName, matchPercentage, scales=scales)
 
-    points = []
-    for pt in zip(*matches[::-1]):
-        # add the template size to point
-        print (pt)
-        realPointX = pt[0] + int(w*0.5)
-        realPointY = pt[1] + int(h*0.5)
-        newRealPoint = (realPointX,realPointY)
+    returnDict['matches'] = matches
+    returnDict['width'] = w
+    returnDict['height'] = h
+    return returnDict
 
-        if(len(points) >= 1):
-            isNewPoint = checkPoints(newRealPoint, points, w, h)
-            if (isNewPoint == True):
-                points.append(newRealPoint)
-        else:
-            points.append(newRealPoint)
-    print (points)
-    if(len(points) > 0):
-        print (points)
-        pywinauto.mouse.click(coords=(points[0]))
-
-def inBattle():
+def initialMatch(noxWindowDimensions):
+    tempMatches = []
     vision = Vision()
     vision.setMonitor(noxWindowDimensions)
 
     UIscale = vision.find_scale(noxWindowDimensions['width'])
     scales = [UIscale]
 
-    initial_template = vision.templates['endBattle']
-    scaled_template = cv2.resize(initial_template, (0,0), fx=UIscale, fy=UIscale)
-    w, h = scaled_template.shape[::-1]
-    matches = vision.scaled_find_template('endBattle', 0.50, scales=scales)
+    for template in vision.templates:
+        initial_template = vision.templates[template]
+        scaled_template = cv2.resize(initial_template, (0,0), fx=UIscale, fy=UIscale)
+        w, h = scaled_template.shape[::-1]
 
-    points = []
-    battling = True
-    while(battling == True):
-        print('In Battle')
+        matches = vision.scaled_find_template(template, 0.70, scales=scales)
+
         for pt in zip(*matches[::-1]):
             # add the template size to point
             realPointX = pt[0] + int(w*0.5)
             realPointY = pt[1] + int(h*0.5)
             newRealPoint = (realPointX,realPointY)
 
+            if(len(tempMatches) >= 1):
+                isNewPoint = checkPoints(newRealPoint, tempMatches, w, h)
+                if (isNewPoint == True):
+                    tempMatches.append(newRealPoint)
+            else:
+                tempMatches.append(newRealPoint)
+    print('Found enemies at these positions: ')
+    print(tempMatches)
+    return tempMatches
+
+def chooseEnemy(noxWindowDimensions, matched):
+    randNumb = random.randint(0, len(matched)-1)
+    print ('Picked: ' + str(matched[randNumb]))
+    pywinauto.mouse.click(coords=(matched[randNumb][0],matched[randNumb][1]))
+    del matched[randNumb]
+    time.sleep(7)
+    startBattle(noxWindowDimensions)
+    inBattle(noxWindowDimensions)
+    endBattle(noxWindowDimensions)
+    return matched
+
+def startBattle(noxWindowDimensions):
+    templateArray = initalize(noxWindowDimensions, 'startBattle', 0.70)
+
+    points = []
+    for pt in zip(*templateArray['matches'][::-1]):
+        # add the template size to point
+        realPointX = pt[0] + int(templateArray['width']*0.5)
+        realPointY = pt[1] + int(templateArray['height']*0.5)
+        newRealPoint = (realPointX,realPointY)
+
+        if(len(points) >= 1):
+            isNewPoint = checkPoints(newRealPoint, points, templateArray['width'], templateArray['height'])
+            if (isNewPoint == True):
+                points.append(newRealPoint)
+        else:
+            points.append(newRealPoint)
+    if(len(points) > 0):
+        pywinauto.mouse.click(coords=(points[0]))
+
+def inBattle(noxWindowDimensions):
+    templateArray = initalize(noxWindowDimensions, 'endBattle', 0.70)
+
+    points = []
+    battling = True
+    while(battling == True):
+        print('In Battle...')
+        for pt in zip(*templateArray['matches'][::-1]):
+            # add the template size to point
+            realPointX = pt[0] + int(templateArray['width']*0.5)
+            realPointY = pt[1] + int(templateArray['height']*0.5)
+            newRealPoint = (realPointX,realPointY)
+
             if(len(points) >= 1):
-                isNewPoint = checkPoints(newRealPoint, points, w, h)
+                isNewPoint = checkPoints(newRealPoint, points, templateArray['width'], templateArray['height'])
                 if (isNewPoint == True):
                     points.append(newRealPoint)
             else:
@@ -213,53 +251,33 @@ def inBattle():
             print (points)
             battling = False
 
-        vision = Vision()
-        vision.setMonitor(noxWindowDimensions)
-
-        UIscale = vision.find_scale(noxWindowDimensions['width'])
-        scales = [UIscale]
-
-        initial_template = vision.templates['endBattle']
-        scaled_template = cv2.resize(initial_template, (0,0), fx=UIscale, fy=UIscale)
-        w, h = scaled_template.shape[::-1]
-        matches = vision.scaled_find_template('endBattle', 0.50, scales=scales)
+        templateArray = initalize(noxWindowDimensions, 'endBattle', 0.70)
         time.sleep(5)
 
-    print ('Out of battle loop')
-    print (points)
+    print ('Battle ended')
     pywinauto.mouse.click(coords=(points[0]))
     time.sleep(5)
     pywinauto.mouse.click(coords=(points[0]))
     time.sleep(3)
     pywinauto.mouse.click(coords=(points[0]))
 
-def endBattle():
-    vision = Vision()
-    vision.setMonitor(noxWindowDimensions)
-
-    UIscale = vision.find_scale(noxWindowDimensions['width'])
-    scales = [UIscale]
-
-    initial_template = vision.templates['confirm']
-    scaled_template = cv2.resize(initial_template, (0,0), fx=UIscale, fy=UIscale)
-    w, h = scaled_template.shape[::-1]
-    matches = vision.scaled_find_template('confirm', 0.70, scales=scales)
+def endBattle(noxWindowDimensions):
+    templateArray = initalize(noxWindowDimensions, 'confirm', 0.70)
 
     points = []
-    for pt in zip(*matches[::-1]):
+    for pt in zip(*templateArray['matches'][::-1]):
         # add the template size to point
-        realPointX = pt[0] + int(w*0.5)
-        realPointY = pt[1] + int(h*0.5)
+        realPointX = pt[0] + int(templateArray['width']*0.5)
+        realPointY = pt[1] + int(templateArray['height']*0.5)
         newRealPoint = (realPointX,realPointY)
 
         if(len(points) >= 1):
-            isNewPoint = checkPoints(newRealPoint, points, w, h)
+            isNewPoint = checkPoints(newRealPoint, points, templateArray['width'], templateArray['height'])
             if (isNewPoint == True):
                 points.append(newRealPoint)
         else:
             points.append(newRealPoint)
 
-    print (points)
     pywinauto.mouse.click(coords=(points[0]))
     time.sleep(5)
 
@@ -267,81 +285,11 @@ noxWindowObject = getWindowObject(APP_PATH)
 bringAppToFront(noxWindowObject)
 noxWindowDimensions = getWindowDimensions(noxWindowObject)
 
-vision = Vision()
-vision.setMonitor(noxWindowDimensions)
-
-# vision.save_screenshot()
-
-UIscale = vision.find_scale(noxWindowDimensions['width'])
-scales = [UIscale]
 matched = []
+matched = initialMatch(noxWindowDimensions)
 
-for template in vision.templates:
-    initial_template = vision.templates[template]
-    scaled_template = cv2.resize(initial_template, (0,0), fx=UIscale, fy=UIscale)
-    w, h = scaled_template.shape[::-1]
+for x in range(0, len(matched)):
+    matched = chooseEnemy(noxWindowDimensions, matched)
 
-    matches = vision.scaled_find_template(template, 0.70, scales=scales)
-
-    for pt in zip(*matches[::-1]):
-        # add the template size to point
-        realPointX = pt[0] + int(w*0.5)
-        realPointY = pt[1] + int(h*0.5)
-        newRealPoint = (realPointX,realPointY)
-
-        if(len(matched) >= 1):
-            isNewPoint = checkPoints(newRealPoint, matched, w, h)
-            if (isNewPoint == True):
-                matched.append(newRealPoint)
-        else:
-            matched.append(newRealPoint)
+print('End of script, following matched array should be empty: ')
 print(matched)
-
-randNumb = random.randint(0, len(matched)-1)
-print (matched[randNumb])
-pywinauto.mouse.click(coords=(matched[randNumb][0],matched[randNumb][1]))
-del matched[randNumb]
-time.sleep(7)
-startBattle()
-inBattle()
-endBattle()
-
-randNumb = random.randint(0, len(matched)-1)
-print (matched[randNumb])
-pywinauto.mouse.click(coords=(matched[randNumb][0],matched[randNumb][1]))
-del matched[randNumb]
-time.sleep(7)
-startBattle()
-inBattle()
-endBattle()
-
-randNumb = random.randint(0, len(matched)-1)
-print (matched[randNumb])
-pywinauto.mouse.click(coords=(matched[randNumb][0],matched[randNumb][1]))
-del matched[randNumb]
-time.sleep(7)
-startBattle()
-inBattle()
-endBattle()
-
-randNumb = random.randint(0, len(matched)-1)
-print (matched[randNumb])
-pywinauto.mouse.click(coords=(matched[randNumb][0],matched[randNumb][1]))
-del matched[randNumb]
-time.sleep(7)
-startBattle()
-inBattle()
-endBattle()
-
-randNumb = random.randint(0, len(matched)-1)
-print (matched[randNumb])
-pywinauto.mouse.click(coords=(matched[randNumb][0],matched[randNumb][1]))
-del matched[randNumb]
-time.sleep(7)
-startBattle()
-inBattle()
-endBattle()
-
-print(matched)
-
-#print (np.shape(matches)[1] >= 1)
