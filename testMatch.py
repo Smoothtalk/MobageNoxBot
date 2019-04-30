@@ -159,7 +159,7 @@ def initalize(noxWindowDimensions, templateName, matchPercentage):
     initial_template = vision.templates[templateName]
     scaled_template = cv2.resize(initial_template, (0,0), fx=UIscale, fy=UIscale)
     w, h = scaled_template.shape[::-1]
-    matches = vision.scaled_find_template('templateName, matchPercentage, scales=scales)
+    matches = vision.scaled_find_template(templateName, matchPercentage, scales=scales)
 
     returnDict['matches'] = matches
     returnDict['width'] = w
