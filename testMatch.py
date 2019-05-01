@@ -21,17 +21,17 @@ isKizunaSP4 = True
 class Vision:
     def __init__(self):
         self.static_templates = {
-            'T4-Box'      : 'assets/T4-Box.png',
-            'Gear'        : 'assets/Gear.png',
             'Akagi'       : 'assets/Akagi.png',
             'Akashi'      : 'assets/Akashi.png',
             'Aircraft1'   : 'assets/Ac1.png',
             'Battleship1' : 'assets/Bs1.png',
             'Kizuna1'     : 'assets/KZ1.png',
             'Kizuna2'     : 'assets/KZ2.png',
-            'Kizuna3'     : 'assets/KZ3.png',
-            'Kizuna4'     : 'assets/KZ4.png',
-            'Kizuna5'     : 'assets/KZ5.png',
+            'Kizuna3'     : 'assets/KZ3.png'
+        }
+        self.non_enemy_static_templates = {
+            'T4-Box'      : 'assets/T4-Box.png',
+            'Gear'        : 'assets/Gear.png',
             'startBattle' : 'assets/BattleStart.png',
             'endBattle'   : 'assets/BtFin.png',
             'confirm'     : 'assets/Confirm.png',
@@ -39,6 +39,7 @@ class Vision:
             'switch'      : 'assets/switch.png'
         }
         self.templates = { k: cv2.imread(v, 0) for (k, v) in self.static_templates.items() }
+        self.nonEnemyTemplates = { k: cv2.imread(v, 0) for (k, v) in self.non_enemy_static_templates.items() }
         self.screen = mss()
         self.frame = None
 
@@ -74,14 +75,19 @@ class Vision:
         matches = np.where(res >= threshold)
         return matches
 
-    def scaled_find_template(self, name, threshold, scales, image=None):
+    def scaled_find_template(self, name, threshold, templateSet, scales, image=None):
         if image is None:
             if self.frame is None:
                 self.refresh_frame()
 
             image = self.frame
 
-        initial_template = self.templates[name]
+        # try catch for KeyError and each error try a different array
+        if(templateSet == 'enemy'):
+            initial_template = self.templates[name]
+        else:
+            initial_template = self.nonEnemyTemplates[name]
+
         for scale in scales:
             scaled_template = cv2.resize(initial_template, (0,0), fx=scale, fy=scale)
             matches = self.match_template(
@@ -149,8 +155,12 @@ def getWindowDimensions(appWindow):
 #TODO
 def checkPoints(newPoint, matched, w, h):
     isNewPoint = True
+    tempX = []
     for point in matched:
-        if (abs(newPoint[0] - point[0]) < (w*0.5) and abs(newPoint[1] - point[1]) < (h*0.5)):
+        if (abs(newPoint[0] - point[0]) < w):
+            tempX.append(newPoint)
+    for checkPoint in tempX
+         abs(newPoint[1] - point[1]) < (h*0.5):
             isNewPoint = False
     return isNewPoint
 
@@ -163,10 +173,12 @@ def matchTemplate(noxWindowDimensions, templateName, matchPercentage):
     UIscale = vision.find_scale(noxWindowDimensions['width'])
     scales = [UIscale]
 
-    initial_template = vision.templates[templateName]
+    # try catch for KeyError and each error try a different array
+    initial_template = vision.nonEnemyTemplates[templateName]
+
     scaled_template = cv2.resize(initial_template, (0,0), fx=UIscale, fy=UIscale)
     w, h = scaled_template.shape[::-1]
-    matches = vision.scaled_find_template(templateName, matchPercentage, scales=scales)
+    matches = vision.scaled_find_template(templateName, matchPercentage, 'UI', scales=scales)
 
     returnDict['matches'] = matches
     returnDict['width'] = w
@@ -186,12 +198,12 @@ def initialMatch():
         scaled_template = cv2.resize(initial_template, (0,0), fx=UIscale, fy=UIscale)
         w, h = scaled_template.shape[::-1]
 
-        matches = vision.scaled_find_template(template, 0.70, scales=scales)
+        matches = vision.scaled_find_template(template, 0.50, 'enemy', scales=scales)
 
         for pt in zip(*matches[::-1]):
             # add the template size to point
-            realPointX = pt[0] + int(w*0.5)
-            realPointY = pt[1] + int(h*0.5)
+            realPointX = pt[0] + int(w * 0.5)
+            realPointY = pt[1] + int(h * 1.5)
             newRealPoint = (realPointX,realPointY)
 
             if(len(tempMatches) >= 1):
@@ -209,7 +221,7 @@ def chooseEnemy(matched):
     print ('Picked: ' + str(matched[randNumb]))
     pywinauto.mouse.click(coords=(matched[randNumb][0],matched[randNumb][1]))
     del matched[randNumb]
-    time.sleep(7)
+    time.sleep(9)
     startBattle()
     inBattle()
     endBattle()
@@ -238,18 +250,21 @@ def chooseBoss(noxWindowDimensions):
     # Need to be able to drag map to find boss
     # Find midpoint of screen
     # Left click mouse, drag down to bottom of screen, let go of mouse
+    # TODO may need to potentially find empty tile and click that and then scroll up
 
     # Method 1:
-    # pywinauto.mouse.press(button='left', coords=(int(noxWindowDimensions['width']/2),int(noxWindowDimensions['height']/2)))
-    # time.sleep(2)
-    # pywinauto.mouse.move(coords=(int(noxWindowDimensions['width']/2),int(noxWindowDimensions['height'])))
-    # time.sleep(2)
-    # pywinauto.mouse.release(button='left', coords=(int(noxWindowDimensions['width']/2),int(noxWindowDimensions['height'])))
+    pywinauto.mouse.press(button='left', coords=(int(noxWindowDimensions['width']/2),int(noxWindowDimensions['height']/2)))
+    time.sleep(2)
+    pywinauto.mouse.move(coords=(int(noxWindowDimensions['width']/2),int(noxWindowDimensions['height'])))
+    time.sleep(2)
+    pywinauto.mouse.release(button='left', coords=(int(noxWindowDimensions['width']/2),int(noxWindowDimensions['height'])))
 
     # Method 2
-    pywinauto.mouse.scroll(coords=(int(noxWindowDimensions['width']/2),int(noxWindowDimensions['height']/2)), wheel_dist=1)
+    # for x in range(0, 5):
+    #     pywinauto.mouse.scroll(coords=(int(noxWindowDimensions['width']/2),int(noxWindowDimensions['height']/2)), wheel_dist=30)
+    #     time.sleep(0.1)
 
-    #This finds the boss
+    # This finds the boss
     templateArray = matchTemplate(noxWindowDimensions, 'giantKizuna', 0.70)
     points = []
 
@@ -267,6 +282,10 @@ def chooseBoss(noxWindowDimensions):
             points.append(newRealPoint)
     if(len(points) > 0):
         pywinauto.mouse.click(coords=(points[0]))
+        time.sleep(9)
+        startBattle()
+        inBattle()
+        endBattle()
 
 def startBattle():
     templateArray = matchTemplate(noxWindowDimensions, 'startBattle', 0.70)
@@ -314,7 +333,7 @@ def inBattle():
         templateArray = matchTemplate(noxWindowDimensions, 'endBattle', 0.70)
         time.sleep(2)
 
-    print ('Battle ended')
+    print ('\nBattle ended')
     pywinauto.mouse.click(coords=(points[0]))
     time.sleep(5)
     pywinauto.mouse.click(coords=(points[0]))
@@ -359,7 +378,7 @@ noxWindowDimensions = getWindowDimensions(noxWindowObject)
 matched = initialMatch()
 
 if(isKizunaSP4 == True and len(matched) >= 5):
-    for x in range(0, len(matched)):
+    for x in range(0, 5):
         matched = chooseEnemy(matched)
     switchFleet()
     chooseBoss(noxWindowDimensions)
