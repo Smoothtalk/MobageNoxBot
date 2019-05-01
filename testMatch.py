@@ -254,12 +254,11 @@ def switchFleet():
         pywinauto.mouse.click(coords=(points[0]))
 
 def chooseBoss(noxWindowDimensions):
-    # Need to be able to drag map to find boss
-    # Find midpoint of screen
-    # Left click mouse, drag down to bottom of screen, let go of mouse
     points = []
 
     # this finds an empty tile to click
+    # Find midpoint of screen
+    # Left click mouse, drag down to bottom of screen, let go of mouse
     templateArray = matchTemplate(noxWindowDimensions, 'empty', 0.70, 'EMPTY')
     for pt in zip(*templateArray['matches'][::-1]):
         # add the template size to point
@@ -358,7 +357,7 @@ def inBattle():
             battling = False
 
         templateArray = matchTemplate(noxWindowDimensions, 'endBattle', 0.70, 'UI')
-        time.sleep(2)
+        time.sleep(0.5)
 
     print ('\nBattle ended')
     pywinauto.mouse.click(coords=(points[0]))
