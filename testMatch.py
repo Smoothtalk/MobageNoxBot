@@ -159,8 +159,8 @@ def checkPoints(newPoint, matched, w, h):
     for point in matched:
         if (abs(newPoint[0] - point[0]) < w):
             tempX.append(newPoint)
-    for checkPoint in tempX
-         abs(newPoint[1] - point[1]) < (h*0.5):
+    for checkPoint in tempX:
+         if(abs(newPoint[1] - point[1]) < h):
             isNewPoint = False
     return isNewPoint
 
@@ -385,5 +385,5 @@ if(isKizunaSP4 == True and len(matched) >= 5):
 else:
     print ('Error less than 5 boats selected')
 
-print('End of script, following array should be empty:')
+print('End of script, following array should be left over enemies:')
 print(matched)
