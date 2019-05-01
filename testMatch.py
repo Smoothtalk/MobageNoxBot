@@ -234,28 +234,39 @@ def switchFleet():
     if(len(points) > 0):
         pywinauto.mouse.click(coords=(points[0]))
 
-def chooseBoss():
+def chooseBoss(noxWindowDimensions):
     # Need to be able to drag map to find boss
-    
+    # Find midpoint of screen
+    # Left click mouse, drag down to bottom of screen, let go of mouse
 
-    # #This finds the boss
-    # templateArray = matchTemplate(noxWindowDimensions, 'giantKizuna', 0.70)
-    # points = []
-    #
-    # for pt in zip(*templateArray['matches'][::-1]):
-    #     # add the template size to point
-    #     realPointX = pt[0] + int(templateArray['width']*0.5)
-    #     realPointY = pt[1] + int(templateArray['height']*1.5)
-    #     newRealPoint = (realPointX,realPointY)
-    #
-    #     if(len(points) >= 1):
-    #         isNewPoint = checkPoints(newRealPoint, points, templateArray['width'], templateArray['height'])
-    #         if (isNewPoint == True):
-    #             points.append(newRealPoint)
-    #     else:
-    #         points.append(newRealPoint)
-    # if(len(points) > 0):
-    #     pywinauto.mouse.click(coords=(points[0]))
+    # Method 1:
+    # pywinauto.mouse.press(button='left', coords=(int(noxWindowDimensions['width']/2),int(noxWindowDimensions['height']/2)))
+    # time.sleep(2)
+    # pywinauto.mouse.move(coords=(int(noxWindowDimensions['width']/2),int(noxWindowDimensions['height'])))
+    # time.sleep(2)
+    # pywinauto.mouse.release(button='left', coords=(int(noxWindowDimensions['width']/2),int(noxWindowDimensions['height'])))
+
+    # Method 2
+    pywinauto.mouse.scroll(coords=(int(noxWindowDimensions['width']/2),int(noxWindowDimensions['height']/2)), wheel_dist=1)
+
+    #This finds the boss
+    templateArray = matchTemplate(noxWindowDimensions, 'giantKizuna', 0.70)
+    points = []
+
+    for pt in zip(*templateArray['matches'][::-1]):
+        # add the template size to point
+        realPointX = pt[0] + int(templateArray['width']*0.5)
+        realPointY = pt[1] + int(templateArray['height']*1.5)
+        newRealPoint = (realPointX,realPointY)
+
+        if(len(points) >= 1):
+            isNewPoint = checkPoints(newRealPoint, points, templateArray['width'], templateArray['height'])
+            if (isNewPoint == True):
+                points.append(newRealPoint)
+        else:
+            points.append(newRealPoint)
+    if(len(points) > 0):
+        pywinauto.mouse.click(coords=(points[0]))
 
 def startBattle():
     templateArray = matchTemplate(noxWindowDimensions, 'startBattle', 0.70)
@@ -344,16 +355,16 @@ def consoleBattlePrint():
 noxWindowObject = getWindowObject(APP_PATH)
 bringAppToFront(noxWindowObject)
 noxWindowDimensions = getWindowDimensions(noxWindowObject)
-switchFleet()
-chooseBoss()
-# matched = initialMatch()
-#
-# if(isKizunaSP4 == True and len(matched) >= 5):
-#     for x in range(0, len(matched)):
-#         matched = chooseEnemy(matched)
-#     chooseBoss()
-# else:
-#     print ('Error less than 5 boats selected')
-#
-# print('End of script, following array should be empty:')
-# print(matched)
+
+matched = initialMatch()
+
+if(isKizunaSP4 == True and len(matched) >= 5):
+    for x in range(0, len(matched)):
+        matched = chooseEnemy(matched)
+    switchFleet()
+    chooseBoss(noxWindowDimensions)
+else:
+    print ('Error less than 5 boats selected')
+
+print('End of script, following array should be empty:')
+print(matched)
