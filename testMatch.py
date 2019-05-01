@@ -34,7 +34,9 @@ class Vision:
             'Kizuna5'     : 'assets/KZ5.png',
             'startBattle' : 'assets/BattleStart.png',
             'endBattle'   : 'assets/BtFin.png',
-            'confirm'     : 'assets/Confirm.png'
+            'confirm'     : 'assets/Confirm.png',
+            'giantKizuna' : 'assets/giantKizuna.png',
+            'switch'      : 'assets/switch.png'
         }
         self.templates = { k: cv2.imread(v, 0) for (k, v) in self.static_templates.items() }
         self.screen = mss()
@@ -213,8 +215,47 @@ def chooseEnemy(matched):
     endBattle()
     return matched
 
-def chooseBoss(matched):
-    print('stub')
+def switchFleet():
+    templateArray = matchTemplate(noxWindowDimensions, 'switch', 0.70)
+    points = []
+
+    for pt in zip(*templateArray['matches'][::-1]):
+        # add the template size to point
+        realPointX = pt[0] + int(templateArray['width']*0.5)
+        realPointY = pt[1] + int(templateArray['height']*1.5)
+        newRealPoint = (realPointX,realPointY)
+
+        if(len(points) >= 1):
+            isNewPoint = checkPoints(newRealPoint, points, templateArray['width'], templateArray['height'])
+            if (isNewPoint == True):
+                points.append(newRealPoint)
+        else:
+            points.append(newRealPoint)
+    if(len(points) > 0):
+        pywinauto.mouse.click(coords=(points[0]))
+
+def chooseBoss():
+    # Need to be able to drag map to find boss
+    
+
+    # #This finds the boss
+    # templateArray = matchTemplate(noxWindowDimensions, 'giantKizuna', 0.70)
+    # points = []
+    #
+    # for pt in zip(*templateArray['matches'][::-1]):
+    #     # add the template size to point
+    #     realPointX = pt[0] + int(templateArray['width']*0.5)
+    #     realPointY = pt[1] + int(templateArray['height']*1.5)
+    #     newRealPoint = (realPointX,realPointY)
+    #
+    #     if(len(points) >= 1):
+    #         isNewPoint = checkPoints(newRealPoint, points, templateArray['width'], templateArray['height'])
+    #         if (isNewPoint == True):
+    #             points.append(newRealPoint)
+    #     else:
+    #         points.append(newRealPoint)
+    # if(len(points) > 0):
+    #     pywinauto.mouse.click(coords=(points[0]))
 
 def startBattle():
     templateArray = matchTemplate(noxWindowDimensions, 'startBattle', 0.70)
@@ -303,13 +344,16 @@ def consoleBattlePrint():
 noxWindowObject = getWindowObject(APP_PATH)
 bringAppToFront(noxWindowObject)
 noxWindowDimensions = getWindowDimensions(noxWindowObject)
-matched = initialMatch()
-
-if(isKizunaSP4 == True and len(matched) >= 5):
-    for x in range(0, len(matched)):
-        matched = chooseEnemy(matched)
-else:
-    print ('Error less than 5 boats selected')
-
-print('End of script, following array should be empty:')
-print(matched)
+switchFleet()
+chooseBoss()
+# matched = initialMatch()
+#
+# if(isKizunaSP4 == True and len(matched) >= 5):
+#     for x in range(0, len(matched)):
+#         matched = chooseEnemy(matched)
+#     chooseBoss()
+# else:
+#     print ('Error less than 5 boats selected')
+#
+# print('End of script, following array should be empty:')
+# print(matched)
