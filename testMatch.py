@@ -241,7 +241,7 @@ def switchFleet():
     for pt in zip(*templateArray['matches'][::-1]):
         # add the template size to point
         realPointX = pt[0] + int(templateArray['width']*0.5)
-        realPointY = pt[1] + int(templateArray['height']*1.5)
+        realPointY = pt[1] + int(templateArray['height'])
         newRealPoint = (realPointX,realPointY)
 
         if(len(points) >= 1):
@@ -315,7 +315,7 @@ def startBattle():
         for pt in zip(*templateArray['matches'][::-1]):
             # add the template size to point
             realPointX = pt[0] + int(templateArray['width']*0.5)
-            realPointY = pt[1] + int(templateArray['height']*1.5)
+            realPointY = pt[1] + int(templateArray['height']*0.5)
             newRealPoint = (realPointX,realPointY)
 
             if(len(points) >= 1):
@@ -343,7 +343,6 @@ def inBattle():
     while(battling == True):
         consolePrint()
         for pt in zip(*templateArray['matches'][::-1]):
-            # add the template size to point
             realPointX = pt[0] + int(templateArray['width']*0.5)
             realPointY = pt[1] + int(templateArray['height']*1.5)
             newRealPoint = (realPointX,realPointY)
@@ -375,7 +374,7 @@ def endBattle():
     for pt in zip(*templateArray['matches'][::-1]):
         # add the template size to point
         realPointX = pt[0] + int(templateArray['width']*0.5)
-        realPointY = pt[1] + int(templateArray['height']*1.5)
+        realPointY = pt[1] + int(templateArray['height'])
         newRealPoint = (realPointX,realPointY)
 
         if(len(points) >= 1):
