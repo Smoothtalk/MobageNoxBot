@@ -155,7 +155,6 @@ def getWindowDimensions(appWindow):
     windowObj = {'top': y, 'left': x, 'width': w, 'height': h}
     return windowObj
 
-#TODO
 def checkPoints(newPoint, matched, w, h):
     isNewPoint = True
     tempX = []
@@ -230,7 +229,6 @@ def chooseEnemy(matched):
     print ('Picked: ' + str(matched[randNumb]))
     pywinauto.mouse.click(coords=(matched[randNumb][0],matched[randNumb][1]))
     del matched[randNumb]
-    time.sleep(9)
     startBattle()
     inBattle()
     endBattle()
@@ -259,7 +257,6 @@ def chooseBoss(noxWindowDimensions):
     # Need to be able to drag map to find boss
     # Find midpoint of screen
     # Left click mouse, drag down to bottom of screen, let go of mouse
-    # TODO may need to potentially find empty tile and click that and then scroll up
     points = []
 
     # this finds an empty tile to click
@@ -311,20 +308,31 @@ def startBattle():
     templateArray = matchTemplate(noxWindowDimensions, 'startBattle', 0.70, 'UI')
 
     points = []
-    for pt in zip(*templateArray['matches'][::-1]):
-        # add the template size to point
-        realPointX = pt[0] + int(templateArray['width']*0.5)
-        realPointY = pt[1] + int(templateArray['height']*1.5)
-        newRealPoint = (realPointX,realPointY)
+    moving = True
+    sys.stdout.write('Moving')
+    while(moving == True):
+        consolePrint()
+        for pt in zip(*templateArray['matches'][::-1]):
+            # add the template size to point
+            realPointX = pt[0] + int(templateArray['width']*0.5)
+            realPointY = pt[1] + int(templateArray['height']*1.5)
+            newRealPoint = (realPointX,realPointY)
 
-        if(len(points) >= 1):
-            isNewPoint = checkPoints(newRealPoint, points, templateArray['width'], templateArray['height'])
-            if (isNewPoint == True):
+            if(len(points) >= 1):
+                isNewPoint = checkPoints(newRealPoint, points, templateArray['width'], templateArray['height'])
+                if (isNewPoint == True):
+                    points.append(newRealPoint)
+            else:
                 points.append(newRealPoint)
-        else:
-            points.append(newRealPoint)
-    if(len(points) > 0):
-        pywinauto.mouse.click(coords=(points[0]))
+
+        if(len(points) > 0):
+            moving = False
+
+        templateArray = matchTemplate(noxWindowDimensions, 'startBattle', 0.70, 'UI')
+
+    print ('\nEntered fleet manager')
+    #TODO make sure auto is checked here
+    pywinauto.mouse.click(coords=(points[0]))
 
 def inBattle():
     templateArray = matchTemplate(noxWindowDimensions, 'endBattle', 0.70, 'UI')
@@ -333,7 +341,7 @@ def inBattle():
     battling = True
     sys.stdout.write('Battling')
     while(battling == True):
-        consoleBattlePrint()
+        consolePrint()
         for pt in zip(*templateArray['matches'][::-1]):
             # add the template size to point
             realPointX = pt[0] + int(templateArray['width']*0.5)
@@ -380,7 +388,7 @@ def endBattle():
     pywinauto.mouse.click(coords=(points[0]))
     time.sleep(5)
 
-def consoleBattlePrint():
+def consolePrint():
     for x in range(0, 3):
         sys.stdout.write(LOADING_DOT)
         sys.stdout.flush()
