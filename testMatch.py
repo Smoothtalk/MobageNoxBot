@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 import time
 import random
+import sys
 
 from matplotlib import pyplot as plt
 from mss import mss
@@ -12,6 +13,10 @@ from PIL import Image
 APP_PATH = "D:\\Program Files\\Nox\\bin\\Nox.exe"
 UI_WIDTH_720 = 1280
 SHOW_MATCH = False
+CONSOLE_SLEEP_TIME = 0.2
+LOADING_DOT = '.'
+BACKSPACE = '\b \b'
+isKizunaSP4 = True
 
 class Vision:
     def __init__(self):
@@ -147,7 +152,7 @@ def checkPoints(newPoint, matched, w, h):
             isNewPoint = False
     return isNewPoint
 
-def initalize(noxWindowDimensions, templateName, matchPercentage):
+def matchTemplate(noxWindowDimensions, templateName, matchPercentage):
     returnDict = {}
 
     vision = Vision()
@@ -166,7 +171,7 @@ def initalize(noxWindowDimensions, templateName, matchPercentage):
     returnDict['height'] = h
     return returnDict
 
-def initialMatch(noxWindowDimensions):
+def initialMatch():
     tempMatches = []
     vision = Vision()
     vision.setMonitor(noxWindowDimensions)
@@ -197,19 +202,19 @@ def initialMatch(noxWindowDimensions):
     print(tempMatches)
     return tempMatches
 
-def chooseEnemy(noxWindowDimensions, matched):
+def chooseEnemy(matched):
     randNumb = random.randint(0, len(matched)-1)
     print ('Picked: ' + str(matched[randNumb]))
     pywinauto.mouse.click(coords=(matched[randNumb][0],matched[randNumb][1]))
     del matched[randNumb]
     time.sleep(7)
-    startBattle(noxWindowDimensions)
-    inBattle(noxWindowDimensions)
-    endBattle(noxWindowDimensions)
+    startBattle()
+    inBattle()
+    endBattle()
     return matched
 
-def startBattle(noxWindowDimensions):
-    templateArray = initalize(noxWindowDimensions, 'startBattle', 0.70)
+def startBattle():
+    templateArray = matchTemplate(noxWindowDimensions, 'startBattle', 0.70)
 
     points = []
     for pt in zip(*templateArray['matches'][::-1]):
@@ -227,13 +232,14 @@ def startBattle(noxWindowDimensions):
     if(len(points) > 0):
         pywinauto.mouse.click(coords=(points[0]))
 
-def inBattle(noxWindowDimensions):
-    templateArray = initalize(noxWindowDimensions, 'endBattle', 0.70)
+def inBattle():
+    templateArray = matchTemplate(noxWindowDimensions, 'endBattle', 0.70)
 
     points = []
     battling = True
+    sys.stdout.write('Battling')
     while(battling == True):
-        print('In Battle...')
+        consoleBattlePrint()
         for pt in zip(*templateArray['matches'][::-1]):
             # add the template size to point
             realPointX = pt[0] + int(templateArray['width']*0.5)
@@ -248,11 +254,10 @@ def inBattle(noxWindowDimensions):
                 points.append(newRealPoint)
 
         if(len(points) > 0):
-            print (points)
             battling = False
 
-        templateArray = initalize(noxWindowDimensions, 'endBattle', 0.70)
-        time.sleep(5)
+        templateArray = matchTemplate(noxWindowDimensions, 'endBattle', 0.70)
+        time.sleep(2)
 
     print ('Battle ended')
     pywinauto.mouse.click(coords=(points[0]))
@@ -261,8 +266,8 @@ def inBattle(noxWindowDimensions):
     time.sleep(3)
     pywinauto.mouse.click(coords=(points[0]))
 
-def endBattle(noxWindowDimensions):
-    templateArray = initalize(noxWindowDimensions, 'confirm', 0.70)
+def endBattle():
+    templateArray = matchTemplate(noxWindowDimensions, 'confirm', 0.70)
 
     points = []
     for pt in zip(*templateArray['matches'][::-1]):
@@ -281,15 +286,27 @@ def endBattle(noxWindowDimensions):
     pywinauto.mouse.click(coords=(points[0]))
     time.sleep(5)
 
+def consoleBattlePrint():
+    for x in range(0, 3):
+        sys.stdout.write(LOADING_DOT)
+        sys.stdout.flush()
+        time.sleep(CONSOLE_SLEEP_TIME)
+
+    for x in range(0, 3):
+        sys.stdout.write(BACKSPACE)
+        sys.stdout.flush()
+        time.sleep(CONSOLE_SLEEP_TIME)
+
 noxWindowObject = getWindowObject(APP_PATH)
 bringAppToFront(noxWindowObject)
 noxWindowDimensions = getWindowDimensions(noxWindowObject)
+matched = initialMatch()
 
-matched = []
-matched = initialMatch(noxWindowDimensions)
+if(isKizunaSP4 == True and len(matched) >= 5):
+    for x in range(0, len(matched)):
+        matched = chooseEnemy(matched)
+else:
+    print ('Error less than 5 boats selected')
 
-for x in range(0, len(matched)):
-    matched = chooseEnemy(noxWindowDimensions, matched)
-
-print('End of script, following matched array should be empty: ')
+print('End of script, following array should be empty:')
 print(matched)
