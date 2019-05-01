@@ -21,10 +21,6 @@ isKizunaSP4 = True
 class Vision:
     def __init__(self):
         self.static_templates = {
-            'Akagi'       : 'assets/Akagi.png',
-            'Akashi'      : 'assets/Akashi.png',
-            'Aircraft1'   : 'assets/Ac1.png',
-            'Battleship1' : 'assets/Bs1.png',
             'Kizuna1'     : 'assets/KZ1.png',
             'Kizuna2'     : 'assets/KZ2.png',
             'Kizuna3'     : 'assets/KZ3.png'
@@ -38,8 +34,13 @@ class Vision:
             'giantKizuna' : 'assets/giantKizuna.png',
             'switch'      : 'assets/switch.png'
         }
+        self.empty_tile_templates = {
+            'empty'       : 'assets/Empty.png'
+        }
+
         self.templates = { k: cv2.imread(v, 0) for (k, v) in self.static_templates.items() }
         self.nonEnemyTemplates = { k: cv2.imread(v, 0) for (k, v) in self.non_enemy_static_templates.items() }
+        self.emptyTileTemplates = { k: cv2.imread(v, 0) for (k, v) in self.empty_tile_templates.items() }
         self.screen = mss()
         self.frame = None
 
@@ -83,8 +84,10 @@ class Vision:
             image = self.frame
 
         # try catch for KeyError and each error try a different array
-        if(templateSet == 'enemy'):
+        if(templateSet == 'ENEMY'):
             initial_template = self.templates[name]
+        elif(templateSet == 'EMPTY'):
+            initial_template = self.emptyTileTemplates[name]
         else:
             initial_template = self.nonEnemyTemplates[name]
 
@@ -156,15 +159,15 @@ def getWindowDimensions(appWindow):
 def checkPoints(newPoint, matched, w, h):
     isNewPoint = True
     tempX = []
+
+    #check why 1000, 400 isn't in array
     for point in matched:
         if (abs(newPoint[0] - point[0]) < w):
-            tempX.append(newPoint)
-    for checkPoint in tempX:
-         if(abs(newPoint[1] - point[1]) < h):
-            isNewPoint = False
+            if(abs(newPoint[1] - point[1]) < h):
+                isNewPoint = False
     return isNewPoint
 
-def matchTemplate(noxWindowDimensions, templateName, matchPercentage):
+def matchTemplate(noxWindowDimensions, templateName, matchPercentage, templateSet):
     returnDict = {}
 
     vision = Vision()
@@ -174,11 +177,16 @@ def matchTemplate(noxWindowDimensions, templateName, matchPercentage):
     scales = [UIscale]
 
     # try catch for KeyError and each error try a different array
-    initial_template = vision.nonEnemyTemplates[templateName]
+    if(templateSet == 'ENEMY'):
+        initial_template = vision.templates[templateName]
+    elif(templateSet == 'EMPTY'):
+        initial_template = vision.emptyTileTemplates[templateName]
+    else:
+        initial_template = vision.nonEnemyTemplates[templateName]
 
     scaled_template = cv2.resize(initial_template, (0,0), fx=UIscale, fy=UIscale)
     w, h = scaled_template.shape[::-1]
-    matches = vision.scaled_find_template(templateName, matchPercentage, 'UI', scales=scales)
+    matches = vision.scaled_find_template(templateName, matchPercentage, templateSet, scales=scales)
 
     returnDict['matches'] = matches
     returnDict['width'] = w
@@ -198,7 +206,7 @@ def initialMatch():
         scaled_template = cv2.resize(initial_template, (0,0), fx=UIscale, fy=UIscale)
         w, h = scaled_template.shape[::-1]
 
-        matches = vision.scaled_find_template(template, 0.50, 'enemy', scales=scales)
+        matches = vision.scaled_find_template(template, 0.50, 'ENEMY', scales=scales)
 
         for pt in zip(*matches[::-1]):
             # add the template size to point
@@ -210,8 +218,9 @@ def initialMatch():
                 isNewPoint = checkPoints(newRealPoint, tempMatches, w, h)
                 if (isNewPoint == True):
                     tempMatches.append(newRealPoint)
-            else:
+            else: #first point
                 tempMatches.append(newRealPoint)
+
     print('Found enemies at these positions: ')
     print(tempMatches)
     return tempMatches
@@ -228,7 +237,7 @@ def chooseEnemy(matched):
     return matched
 
 def switchFleet():
-    templateArray = matchTemplate(noxWindowDimensions, 'switch', 0.70)
+    templateArray = matchTemplate(noxWindowDimensions, 'switch', 0.70, 'UI')
     points = []
 
     for pt in zip(*templateArray['matches'][::-1]):
@@ -251,22 +260,33 @@ def chooseBoss(noxWindowDimensions):
     # Find midpoint of screen
     # Left click mouse, drag down to bottom of screen, let go of mouse
     # TODO may need to potentially find empty tile and click that and then scroll up
+    points = []
 
-    # Method 1:
-    pywinauto.mouse.press(button='left', coords=(int(noxWindowDimensions['width']/2),int(noxWindowDimensions['height']/2)))
-    time.sleep(2)
-    pywinauto.mouse.move(coords=(int(noxWindowDimensions['width']/2),int(noxWindowDimensions['height'])))
-    time.sleep(2)
-    pywinauto.mouse.release(button='left', coords=(int(noxWindowDimensions['width']/2),int(noxWindowDimensions['height'])))
+    # this finds an empty tile to click
+    templateArray = matchTemplate(noxWindowDimensions, 'empty', 0.70, 'EMPTY')
+    for pt in zip(*templateArray['matches'][::-1]):
+        # add the template size to point
+        realPointX = pt[0] + int(templateArray['width']*0.5)
+        realPointY = pt[1] + int(templateArray['height']*1.5)
+        newRealPoint = (realPointX,realPointY)
 
-    # Method 2
-    # for x in range(0, 5):
-    #     pywinauto.mouse.scroll(coords=(int(noxWindowDimensions['width']/2),int(noxWindowDimensions['height']/2)), wheel_dist=30)
-    #     time.sleep(0.1)
+        if(len(points) >= 1):
+            isNewPoint = checkPoints(newRealPoint, points, templateArray['width'], templateArray['height'])
+            if (isNewPoint == True):
+                points.append(newRealPoint)
+        else:
+            points.append(newRealPoint)
+    if(len(points) > 0):
+        pywinauto.mouse.click(coords=(points[0]))
+        pywinauto.mouse.press(button='left', coords=(int(noxWindowDimensions['width']/2),int(noxWindowDimensions['height']/2)))
+        time.sleep(2)
+        pywinauto.mouse.move(coords=(int(noxWindowDimensions['width']/2),int(noxWindowDimensions['height'])))
+        time.sleep(2)
+        pywinauto.mouse.release(button='left', coords=(int(noxWindowDimensions['width']/2),int(noxWindowDimensions['height'])))
+        points.clear()
 
     # This finds the boss
-    templateArray = matchTemplate(noxWindowDimensions, 'giantKizuna', 0.70)
-    points = []
+    templateArray = matchTemplate(noxWindowDimensions, 'giantKizuna', 0.70, 'UI')
 
     for pt in zip(*templateArray['matches'][::-1]):
         # add the template size to point
@@ -288,13 +308,13 @@ def chooseBoss(noxWindowDimensions):
         endBattle()
 
 def startBattle():
-    templateArray = matchTemplate(noxWindowDimensions, 'startBattle', 0.70)
+    templateArray = matchTemplate(noxWindowDimensions, 'startBattle', 0.70, 'UI')
 
     points = []
     for pt in zip(*templateArray['matches'][::-1]):
         # add the template size to point
         realPointX = pt[0] + int(templateArray['width']*0.5)
-        realPointY = pt[1] + int(templateArray['height']*0.5)
+        realPointY = pt[1] + int(templateArray['height']*1.5)
         newRealPoint = (realPointX,realPointY)
 
         if(len(points) >= 1):
@@ -307,7 +327,7 @@ def startBattle():
         pywinauto.mouse.click(coords=(points[0]))
 
 def inBattle():
-    templateArray = matchTemplate(noxWindowDimensions, 'endBattle', 0.70)
+    templateArray = matchTemplate(noxWindowDimensions, 'endBattle', 0.70, 'UI')
 
     points = []
     battling = True
@@ -317,7 +337,7 @@ def inBattle():
         for pt in zip(*templateArray['matches'][::-1]):
             # add the template size to point
             realPointX = pt[0] + int(templateArray['width']*0.5)
-            realPointY = pt[1] + int(templateArray['height']*0.5)
+            realPointY = pt[1] + int(templateArray['height']*1.5)
             newRealPoint = (realPointX,realPointY)
 
             if(len(points) >= 1):
@@ -330,7 +350,7 @@ def inBattle():
         if(len(points) > 0):
             battling = False
 
-        templateArray = matchTemplate(noxWindowDimensions, 'endBattle', 0.70)
+        templateArray = matchTemplate(noxWindowDimensions, 'endBattle', 0.70, 'UI')
         time.sleep(2)
 
     print ('\nBattle ended')
@@ -341,13 +361,13 @@ def inBattle():
     pywinauto.mouse.click(coords=(points[0]))
 
 def endBattle():
-    templateArray = matchTemplate(noxWindowDimensions, 'confirm', 0.70)
+    templateArray = matchTemplate(noxWindowDimensions, 'confirm', 0.70, 'UI')
 
     points = []
     for pt in zip(*templateArray['matches'][::-1]):
         # add the template size to point
         realPointX = pt[0] + int(templateArray['width']*0.5)
-        realPointY = pt[1] + int(templateArray['height']*0.5)
+        realPointY = pt[1] + int(templateArray['height']*1.5)
         newRealPoint = (realPointX,realPointY)
 
         if(len(points) >= 1):
