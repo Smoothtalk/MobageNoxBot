@@ -213,6 +213,9 @@ def chooseEnemy(matched):
     endBattle()
     return matched
 
+def chooseBoss(matched):
+    print('stub')
+
 def startBattle():
     templateArray = matchTemplate(noxWindowDimensions, 'startBattle', 0.70)
 
