@@ -158,6 +158,9 @@ def getWindowDimensions(appWindow):
 def returnFocus():
     print ('stub')
 
+def focusLoop():
+    print('stub')
+
 def checkPoints(newPoint, matched, w, h):
     isNewPoint = True
     tempX = []
@@ -400,8 +403,6 @@ def consolePrint():
         sys.stdout.flush()
         time.sleep(CONSOLE_SLEEP_TIME)
 
-def focusLoop():
-    print('stub')
 
 noxWindowObject = getWindowObject(APP_PATH)
 bringAppToFront(noxWindowObject)
