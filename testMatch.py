@@ -400,6 +400,9 @@ def consolePrint():
         sys.stdout.flush()
         time.sleep(CONSOLE_SLEEP_TIME)
 
+def focusLoop():
+    print('stub')
+
 noxWindowObject = getWindowObject(APP_PATH)
 bringAppToFront(noxWindowObject)
 noxWindowDimensions = getWindowDimensions(noxWindowObject)
