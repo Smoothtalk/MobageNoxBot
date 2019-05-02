@@ -155,6 +155,9 @@ def getWindowDimensions(appWindow):
     windowObj = {'top': y, 'left': x, 'width': w, 'height': h}
     return windowObj
 
+def returnFocus():
+    print ('stub')
+
 def checkPoints(newPoint, matched, w, h):
     isNewPoint = True
     tempX = []
