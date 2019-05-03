@@ -128,24 +128,32 @@ class Vision:
         return scale
 
 def getWindowObject(appPath):
+    noxAppDict = {}
     app = pywinauto.Application().connect(path=appPath)
     #window = app.top_window()
     allElements = app.window(title_re="NoxPlayer.*") #returns window spec object
     childWindow = allElements.child_window(title="ScreenBoardClassWindow")
-    return childWindow
+    noxAppDict['allElements'] = allElements
+    noxAppDict['mainWindow'] = childWindow
+    return noxAppDict
 
-def bringAppToFront(appWindow):
+def bringNoxToFront(noxAppWindow):
     #bring window into foreground
-    if appWindow.has_style(pywinauto.win32defines.WS_MINIMIZE): # if minimized
-        pywinauto.win32functions.ShowWindow(appWindow.wrapper_object(), 9) # restore window state
-    else:
-        pywinauto.win32functions.SetForegroundWindow(appWindow.wrapper_object()) #bring to front
+    noxAppWindow.set_focus()
+    # print('minimized: ' + str(noxAppWindow.has_style(pywinauto.win32defines.WS_MINIMIZE)))
+    # print('visible: ' + str(noxAppWindow.has_style(pywinauto.win32defines.WS_VISIBLE)))
 
-def getWindowDimensions(appWindow):
-    w = appWindow.rectangle().width()
-    h = appWindow.rectangle().height()
-    x = appWindow.rectangle().left
-    y = appWindow.rectangle().top
+    # pywinauto.controls.hwndwrapper.HwndWrapper.restore(noxAppWindow)
+    # if noxAppWindow.has_style(pywinauto.win32defines.WS_MINIMIZE): # if minimized
+    #     pywinauto.win32functions.ShowWindow(noxAppWindow.wrapper_object(), 9) # restore window state
+    # else:
+    #     pywinauto.win32functions.SetForegroundWindow(noxAppWindow.wrapper_object()) #bring to front
+
+def getWindowDimensions(noxWindow):
+    w = noxWindow.rectangle().width()
+    h = noxWindow.rectangle().height()
+    x = noxWindow.rectangle().left
+    y = noxWindow.rectangle().top
 
     #TODO force window into certain dimensions before -30 pixel operation
 
@@ -159,18 +167,16 @@ def getHWND():
     hwnd = pywinauto.win32functions.GetForegroundWindow()
     return hwnd
 
-def takeFocus(noxHWND, noxWindow):
+def storeUserState():
     userDict = {}
     userMouseX, userMouseY = win32gui.GetCursorPos()
     currWindowHWND = pywinauto.win32functions.GetForegroundWindow()
-    if(currWindowHWND != noxHWND):
-        userDict['userMouseX'] = userMouseX
-        userDict['userMouseY'] = userMouseY
-        userDict['userWindowHWND'] = currWindowHWND
-        bringAppToFront(noxWindow)
-        return userDict
+    userDict['userMouseX'] = userMouseX
+    userDict['userMouseY'] = userMouseY
+    userDict['userWindowHWND'] = currWindowHWND
+    return userDict
 
-def returnFocus(userDict):
+def restoreUserState(userDict):
     currWindowHWND = pywinauto.win32functions.GetForegroundWindow()
     if(currWindowHWND == noxHWND):
         pywinauto.win32functions.SetForegroundWindow(userDict['userWindowHWND'])
@@ -419,20 +425,27 @@ def consolePrint():
         time.sleep(CONSOLE_SLEEP_TIME)
 
 
-noxWindowObject = getWindowObject(APP_PATH)
-bringAppToFront(noxWindowObject)
-noxHWND = getHWND()
-noxWindowDimensions = getWindowDimensions(noxWindowObject)
+userDict = {}
+noxDict = {}
+userDict = storeUserState()
 
-matched = initialMatch()
+noxDict = getWindowObject(APP_PATH)
+bringNoxToFront(noxDict['allElements'])
+#noxWindowDimensions = getWindowDimensions(noxDict['childWindow'])
 
-if(isKizunaSP4 == True and len(matched) >= 5):
-    for x in range(0, 5):
-        matched = chooseEnemy(matched)
-    switchFleet()
-    chooseBoss(noxWindowDimensions)
-else:
-    print ('Error less than 5 boats selected')
+# noxHWND = getHWND
+# time.sleep(6)
+# restoreUserState(userDict)
 
-print('End of script, following array should be left over enemies:')
-print(matched)
+# matched = initialMatch()
+#
+# if(isKizunaSP4 == True and len(matched) >= 5):
+#     for x in range(0, 5):
+#         matched = chooseEnemy(matched)
+#     switchFleet()
+#     chooseBoss(noxWindowDimensions)
+# else:
+#     print ('Error less than 5 boats selected')
+#
+# print('End of script, following array should be left over enemies:')
+# print(matched)
