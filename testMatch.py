@@ -6,6 +6,7 @@ import time
 import random
 import sys
 
+from ctypes import *
 from matplotlib import pyplot as plt
 from mss import mss
 from PIL import Image
@@ -35,7 +36,7 @@ class Vision:
             'switch'      : 'assets/switch.png'
         }
         self.empty_tile_templates = {
-            'empty'       : 'assets/Empty.png'
+            'city'      : 'assets/city.png'
         }
 
         self.templates = { k: cv2.imread(v, 0) for (k, v) in self.static_templates.items() }
@@ -250,8 +251,10 @@ def chooseEnemy(matched):
     randNumb = random.randint(0, len(matched)-1)
     print ('Picked: ' + str(matched[randNumb]))
     userDict = storeUserState()
+    ok = windll.user32.BlockInput(True) #enable block
     pywinauto.mouse.click(coords=(matched[randNumb][0],matched[randNumb][1]))
     time.sleep(0.5)
+    ok = windll.user32.BlockInput(False) #disable block
     restoreUserState(userDict)
     del matched[randNumb]
     startBattle()
@@ -277,7 +280,9 @@ def switchFleet():
             points.append(newRealPoint)
     if(len(points) > 0):
         userDict = storeUserState()
+        ok = windll.user32.BlockInput(True) #enable block
         pywinauto.mouse.click(coords=(points[0]))
+        ok = windll.user32.BlockInput(False) #disable block
         restoreUserState(userDict)
 
 def chooseBoss(noxWindowDimensions):
@@ -285,7 +290,7 @@ def chooseBoss(noxWindowDimensions):
     # this finds an empty tile to click
     # Find midpoint of screen
     # Left click mouse, drag down to bottom of screen, let go of mouse
-    templateArray = matchTemplate(noxWindowDimensions, 'empty', 0.60, 'EMPTY')
+    templateArray = matchTemplate(noxWindowDimensions, 'city', 0.60, 'EMPTY')
 
     #TODO check empty tile clicking and movement
     for pt in zip(*templateArray['matches'][::-1]):
@@ -302,18 +307,26 @@ def chooseBoss(noxWindowDimensions):
             points.append(newRealPoint)
     if(len(points) > 0):
         userDict = storeUserState()
+        ok = windll.user32.BlockInput(True) #enable block
         pywinauto.mouse.click(coords=(points[0]))
+        ok = windll.user32.BlockInput(False) #disable block
         restoreUserState(userDict)
         userDict = storeUserState()
+        ok = windll.user32.BlockInput(True) #enable block
         pywinauto.mouse.press(button='left', coords=(int(noxWindowDimensions['width']/2),int(noxWindowDimensions['height']/2)))
+        ok = windll.user32.BlockInput(False) #disable block
         restoreUserState(userDict)
         time.sleep(2)
         userDict = storeUserState()
+        ok = windll.user32.BlockInput(True) #enable block
         pywinauto.mouse.move(coords=(int(noxWindowDimensions['width']/2),int(noxWindowDimensions['height'])))
+        ok = windll.user32.BlockInput(False) #disable block
         restoreUserState(userDict)
         time.sleep(2)
         userDict = storeUserState()
+        ok = windll.user32.BlockInput(True) #enable block
         pywinauto.mouse.release(button='left', coords=(int(noxWindowDimensions['width']/2),int(noxWindowDimensions['height'])))
+        ok = windll.user32.BlockInput(False) #disable block
         restoreUserState(userDict)
         points.clear()
 
@@ -334,7 +347,9 @@ def chooseBoss(noxWindowDimensions):
             points.append(newRealPoint)
     if(len(points) > 0):
         userDict = storeUserState()
+        ok = windll.user32.BlockInput(True) #enable block
         pywinauto.mouse.click(coords=(points[0]))
+        ok = windll.user32.BlockInput(False) #disable block
         restoreUserState(userDict)
         startBattle()
         inBattle()
@@ -369,7 +384,9 @@ def startBattle():
     print ('\nEntered fleet manager')
     #TODO make sure auto is checked here
     userDict = storeUserState()
+    ok = windll.user32.BlockInput(True) #enable block
     pywinauto.mouse.click(coords=(points[0]))
+    ok = windll.user32.BlockInput(False) #disable block
     restoreUserState(userDict)
 
 def inBattle():
@@ -401,16 +418,22 @@ def inBattle():
         time.sleep(0.5)
 
     print ('\nBattle ended')
+    ok = windll.user32.BlockInput(True) #enable block
     pywinauto.mouse.click(coords=(points[0]))
+    ok = windll.user32.BlockInput(False) #disable block
     restoreUserState(userDict)
-    #TODO check for next point incase of elite ship
+    #TODO check next point incase of elite ship; reason: longer claim duration and extra click needed
     time.sleep(2)
     userDict = storeUserState()
+    ok = windll.user32.BlockInput(True) #enable block
     pywinauto.mouse.click(coords=(points[0]))
+    ok = windll.user32.BlockInput(False) #disable block
     restoreUserState(userDict)
     time.sleep(3)
     userDict = storeUserState()
+    ok = windll.user32.BlockInput(True) #enable block
     pywinauto.mouse.click(coords=(points[0]))
+    ok = windll.user32.BlockInput(False) #disable block
     restoreUserState(userDict)
 
 def endBattle():
@@ -431,7 +454,9 @@ def endBattle():
         else:
             points.append(newRealPoint)
             userDict = storeUserState()
+    ok = windll.user32.BlockInput(True) #enable block
     pywinauto.mouse.click(coords=(points[0]))
+    ok = windll.user32.BlockInput(False) #disable block
     restoreUserState(userDict)
     time.sleep(5)
 
@@ -453,15 +478,17 @@ bringNoxToFront(noxDict['allElements'])
 noxWindowDimensions = getWindowDimensions(noxDict['mainWindow'])
 noxHWND = getHWND()
 
-matched = initialMatch()
+chooseBoss(noxWindowDimensions)
 
-if(isKizunaSP4 == True and len(matched) >= 5):
-    for x in range(0, 5):
-        matched = chooseEnemy(matched)
-    switchFleet()
-    chooseBoss(noxWindowDimensions)
-else:
-    print ('Error less than 5 boats selected')
-
-print('End of script, following array should be left over enemies:')
-print(matched)
+# matched = initialMatch()
+#
+# if(isKizunaSP4 == True and len(matched) >= 5):
+#     for x in range(0, 5):
+#         matched = chooseEnemy(matched)
+#     switchFleet()
+#     chooseBoss(noxWindowDimensions)
+# else:
+#     print ('Error less than 5 boats selected')
+#
+# print('End of script, following array should be left over enemies:')
+# print(matched)
