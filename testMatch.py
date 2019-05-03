@@ -137,17 +137,9 @@ def getWindowObject(appPath):
     noxAppDict['mainWindow'] = childWindow
     return noxAppDict
 
-def bringNoxToFront(noxAppWindow):
+def bringNoxToFront(noxApp):
     #bring window into foreground
-    noxAppWindow.set_focus()
-    # print('minimized: ' + str(noxAppWindow.has_style(pywinauto.win32defines.WS_MINIMIZE)))
-    # print('visible: ' + str(noxAppWindow.has_style(pywinauto.win32defines.WS_VISIBLE)))
-
-    # pywinauto.controls.hwndwrapper.HwndWrapper.restore(noxAppWindow)
-    # if noxAppWindow.has_style(pywinauto.win32defines.WS_MINIMIZE): # if minimized
-    #     pywinauto.win32functions.ShowWindow(noxAppWindow.wrapper_object(), 9) # restore window state
-    # else:
-    #     pywinauto.win32functions.SetForegroundWindow(noxAppWindow.wrapper_object()) #bring to front
+    noxApp.set_focus()
 
 def getWindowDimensions(noxWindow):
     w = noxWindow.rectangle().width()
@@ -170,6 +162,7 @@ def getHWND():
 def storeUserState():
     userDict = {}
     userMouseX, userMouseY = win32gui.GetCursorPos()
+    time.sleep(3)
     currWindowHWND = pywinauto.win32functions.GetForegroundWindow()
     userDict['userMouseX'] = userMouseX
     userDict['userMouseY'] = userMouseY
@@ -178,6 +171,8 @@ def storeUserState():
 
 def restoreUserState(userDict):
     currWindowHWND = pywinauto.win32functions.GetForegroundWindow()
+    print(currWindowHWND)
+    print (noxHWND)
     if(currWindowHWND == noxHWND):
         pywinauto.win32functions.SetForegroundWindow(userDict['userWindowHWND'])
         pywinauto.mouse.move(coords=(userDict['userMouseX'], userDict['userMouseY']))
@@ -431,11 +426,11 @@ userDict = storeUserState()
 
 noxDict = getWindowObject(APP_PATH)
 bringNoxToFront(noxDict['allElements'])
-#noxWindowDimensions = getWindowDimensions(noxDict['childWindow'])
+noxWindowDimensions = getWindowDimensions(noxDict['mainWindow'])
 
-# noxHWND = getHWND
-# time.sleep(6)
-# restoreUserState(userDict)
+noxHWND = getHWND()
+time.sleep(6)
+restoreUserState(userDict)
 
 # matched = initialMatch()
 #
