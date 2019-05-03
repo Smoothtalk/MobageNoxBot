@@ -159,13 +159,18 @@ def getHWND():
     hwnd = pywinauto.win32functions.GetForegroundWindow()
     return hwnd
 
-def takeFocus(noxHWND):
-    currMouseX, currMouseY = win32gui.GetCursorPos()
+def takeFocus(noxHWND, noxWindow):
+    userDict = {}
+    userMouseX, userMouseY = win32gui.GetCursorPos()
     currWindowHWND = pywinauto.win32functions.GetForegroundWindow()
     if(currWindowHWND != noxHWND):
-        #do the complex shit
+        userDict['userMouseX'] = userMouseX
+        userDict['userMouseY'] = userMouseY
+        userDict['userWindowHWND'] = currWindowHWND
+        bringAppToFront(noxWindow)
+        return userDict
 
-def returnFocus():
+def returnFocus(userDict):
     print('stub')
 
 def checkPoints(newPoint, matched, w, h):
