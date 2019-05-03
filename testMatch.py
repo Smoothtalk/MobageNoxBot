@@ -155,11 +155,12 @@ def getWindowDimensions(appWindow):
     windowObj = {'top': y, 'left': x, 'width': w, 'height': h}
     return windowObj
 
-def returnFocus():
-    print ('stub')
+def getHWND():
+    hwnd = pywinauto.win32functions.GetForegroundWindow()
+    return hwnd
 
-def focusLoop():
-    print('stub')
+def focusCheck():
+    print ('stub')
 
 def checkPoints(newPoint, matched, w, h):
     isNewPoint = True
@@ -406,6 +407,7 @@ def consolePrint():
 
 noxWindowObject = getWindowObject(APP_PATH)
 bringAppToFront(noxWindowObject)
+noxHWND = getHWND()
 noxWindowDimensions = getWindowDimensions(noxWindowObject)
 
 matched = initialMatch()
