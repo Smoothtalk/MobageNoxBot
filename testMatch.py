@@ -159,8 +159,14 @@ def getHWND():
     hwnd = pywinauto.win32functions.GetForegroundWindow()
     return hwnd
 
-def focusCheck():
-    print ('stub')
+def takeFocus(noxHWND):
+    currMouseX, currMouseY = win32gui.GetCursorPos()
+    currWindowHWND = pywinauto.win32functions.GetForegroundWindow()
+    if(currWindowHWND != noxHWND):
+        #do the complex shit
+
+def returnFocus():
+    print('stub')
 
 def checkPoints(newPoint, matched, w, h):
     isNewPoint = True
