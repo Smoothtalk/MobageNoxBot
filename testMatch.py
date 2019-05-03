@@ -171,7 +171,10 @@ def takeFocus(noxHWND, noxWindow):
         return userDict
 
 def returnFocus(userDict):
-    print('stub')
+    currWindowHWND = pywinauto.win32functions.GetForegroundWindow()
+    if(currWindowHWND == noxHWND):
+        pywinauto.win32functions.SetForegroundWindow(userDict['userWindowHWND'])
+        pywinauto.mouse.move(coords=(userDict['userMouseX'], userDict['userMouseY']))
 
 def checkPoints(newPoint, matched, w, h):
     isNewPoint = True
