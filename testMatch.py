@@ -18,6 +18,7 @@ CONSOLE_SLEEP_TIME = 0.2
 LOADING_DOT = '.'
 BACKSPACE = '\b \b'
 isKizunaSP4 = True
+TEST = False
 
 class Vision:
     def __init__(self):
@@ -36,7 +37,7 @@ class Vision:
             'switch'      : 'assets/switch.png'
         }
         self.empty_tile_templates = {
-            'city'      : 'assets/city.png'
+            'city'      : 'assets/City.png'
         }
 
         self.templates = { k: cv2.imread(v, 0) for (k, v) in self.static_templates.items() }
@@ -232,8 +233,8 @@ def initialMatch():
 
         for pt in zip(*matches[::-1]):
             # add the template size to point
-            realPointX = pt[0] + int(w * 0.5)
-            realPointY = pt[1] + int(h * 1.5)
+            realPointX = pt[0] + int(w * 0.5) + noxWindowDimensions['left']
+            realPointY = pt[1] + int(h * 0.5) + noxWindowDimensions['top']
             newRealPoint = (realPointX,realPointY)
 
             if(len(tempMatches) >= 1):
@@ -268,8 +269,8 @@ def switchFleet():
 
     for pt in zip(*templateArray['matches'][::-1]):
         # add the template size to point
-        realPointX = pt[0] + int(templateArray['width']*0.5)
-        realPointY = pt[1] + int(templateArray['height'])
+        realPointX = pt[0] + int(templateArray['width']*0.5) + noxWindowDimensions['left']
+        realPointY = pt[1] + int(templateArray['height']*0.5) + noxWindowDimensions['top']
         newRealPoint = (realPointX,realPointY)
 
         if(len(points) >= 1):
@@ -290,13 +291,13 @@ def chooseBoss(noxWindowDimensions):
     # this finds an empty tile to click
     # Find midpoint of screen
     # Left click mouse, drag down to bottom of screen, let go of mouse
-    templateArray = matchTemplate(noxWindowDimensions, 'city', 0.60, 'EMPTY')
+    templateArray = matchTemplate(noxWindowDimensions, 'city', 0.70, 'EMPTY')
 
     #TODO check empty tile clicking and movement
     for pt in zip(*templateArray['matches'][::-1]):
         # add the template size to point
-        realPointX = pt[0] + int(templateArray['width']*0.5)
-        realPointY = pt[1] + int(templateArray['height']*1.5)
+        realPointX = pt[0] + int(templateArray['width']*0.5) + noxWindowDimensions['left']
+        realPointY = pt[1] + int(templateArray['height']*0.5) + noxWindowDimensions['top']
         newRealPoint = (realPointX,realPointY)
 
         if(len(points) >= 1):
@@ -306,26 +307,20 @@ def chooseBoss(noxWindowDimensions):
         else:
             points.append(newRealPoint)
     if(len(points) > 0):
+        # the point you click
+        # when you drag down
+        # use the x from the point you found the city at
         userDict = storeUserState()
         ok = windll.user32.BlockInput(True) #enable block
-        pywinauto.mouse.click(coords=(points[0]))
+        pywinauto.mouse.press(button='left', coords=(points[0]))
         ok = windll.user32.BlockInput(False) #disable block
-        restoreUserState(userDict)
-        userDict = storeUserState()
+        time.sleep(0.1)
         ok = windll.user32.BlockInput(True) #enable block
-        pywinauto.mouse.press(button='left', coords=(int(noxWindowDimensions['width']/2),int(noxWindowDimensions['height']/2)))
+        pywinauto.mouse.move(coords=(points[0][0],(noxWindowDimensions['top'] + int(noxWindowDimensions['height']))))
         ok = windll.user32.BlockInput(False) #disable block
-        restoreUserState(userDict)
-        time.sleep(2)
-        userDict = storeUserState()
+        time.sleep(0.1)
         ok = windll.user32.BlockInput(True) #enable block
-        pywinauto.mouse.move(coords=(int(noxWindowDimensions['width']/2),int(noxWindowDimensions['height'])))
-        ok = windll.user32.BlockInput(False) #disable block
-        restoreUserState(userDict)
-        time.sleep(2)
-        userDict = storeUserState()
-        ok = windll.user32.BlockInput(True) #enable block
-        pywinauto.mouse.release(button='left', coords=(int(noxWindowDimensions['width']/2),int(noxWindowDimensions['height'])))
+        pywinauto.mouse.release(button='left', coords=(points[0][0],noxWindowDimensions['top'] + int(noxWindowDimensions['height'])))
         ok = windll.user32.BlockInput(False) #disable block
         restoreUserState(userDict)
         points.clear()
@@ -335,8 +330,8 @@ def chooseBoss(noxWindowDimensions):
 
     for pt in zip(*templateArray['matches'][::-1]):
         # add the template size to point
-        realPointX = pt[0] + int(templateArray['width']*0.5)
-        realPointY = pt[1] + int(templateArray['height']*1.5)
+        realPointX = pt[0] + int(templateArray['width']*0.5) + noxWindowDimensions['left']
+        realPointY = pt[1] + int(templateArray['height']*0.5) + noxWindowDimensions['top']
         newRealPoint = (realPointX,realPointY)
 
         if(len(points) >= 1):
@@ -365,8 +360,8 @@ def startBattle():
         consolePrint()
         for pt in zip(*templateArray['matches'][::-1]):
             # add the template size to point
-            realPointX = pt[0] + int(templateArray['width']*0.5)
-            realPointY = pt[1] + int(templateArray['height']*0.5)
+            realPointX = pt[0] + int(templateArray['width']*0.5) + noxWindowDimensions['left']
+            realPointY = pt[1] + int(templateArray['height']*0.5) + noxWindowDimensions['top']
             newRealPoint = (realPointX,realPointY)
 
             if(len(points) >= 1):
@@ -400,8 +395,8 @@ def inBattle():
         consolePrint()
         userDict = storeUserState()
         for pt in zip(*templateArray['matches'][::-1]):
-            realPointX = pt[0] + int(templateArray['width']*0.5)
-            realPointY = pt[1] + int(templateArray['height']*1.5)
+            realPointX = pt[0] + int(templateArray['width']*0.5) + noxWindowDimensions['left']
+            realPointY = pt[1] + int(templateArray['height']*0.5) + noxWindowDimensions['top']
             newRealPoint = (realPointX,realPointY)
 
             if(len(points) >= 1):
@@ -423,7 +418,7 @@ def inBattle():
     ok = windll.user32.BlockInput(False) #disable block
     restoreUserState(userDict)
     #TODO check next point incase of elite ship; reason: longer claim duration and extra click needed
-    time.sleep(2)
+    time.sleep(4)
     userDict = storeUserState()
     ok = windll.user32.BlockInput(True) #enable block
     pywinauto.mouse.click(coords=(points[0]))
@@ -442,8 +437,8 @@ def endBattle():
     points = []
     for pt in zip(*templateArray['matches'][::-1]):
         # add the template size to point
-        realPointX = pt[0] + int(templateArray['width']*0.5)
-        realPointY = pt[1] + int(templateArray['height'])
+        realPointX = pt[0] + int(templateArray['width']*0.5) + noxWindowDimensions['left']
+        realPointY = pt[1] + int(templateArray['height']*0.5) + noxWindowDimensions['top']
         newRealPoint = (realPointX,realPointY)
 
         if(len(points) >= 1):
@@ -478,17 +473,18 @@ bringNoxToFront(noxDict['allElements'])
 noxWindowDimensions = getWindowDimensions(noxDict['mainWindow'])
 noxHWND = getHWND()
 
-chooseBoss(noxWindowDimensions)
+if(TEST == False):
+    matched = initialMatch()
 
-# matched = initialMatch()
-#
-# if(isKizunaSP4 == True and len(matched) >= 5):
-#     for x in range(0, 5):
-#         matched = chooseEnemy(matched)
-#     switchFleet()
-#     chooseBoss(noxWindowDimensions)
-# else:
-#     print ('Error less than 5 boats selected')
-#
-# print('End of script, following array should be left over enemies:')
-# print(matched)
+    if(isKizunaSP4 == True and len(matched) >= 5):
+        for x in range(0, 5):
+            matched = chooseEnemy(matched)
+        switchFleet()
+        chooseBoss(noxWindowDimensions)
+    else:
+        print ('Error less than 5 boats selected')
+
+    print('End of script, following array should be left over enemies:')
+    print(matched)
+else:
+    chooseBoss(noxWindowDimensions)
