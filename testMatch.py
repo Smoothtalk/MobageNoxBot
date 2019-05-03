@@ -139,7 +139,9 @@ def getWindowObject(appPath):
 
 def bringNoxToFront(noxApp):
     #bring window into foreground
+    userDict = storeUserState()
     noxApp.set_focus()
+    restoreUserState(userDict)
 
 def getWindowDimensions(noxWindow):
     w = noxWindow.rectangle().width()
@@ -162,20 +164,18 @@ def getHWND():
 def storeUserState():
     userDict = {}
     userMouseX, userMouseY = win32gui.GetCursorPos()
-    time.sleep(3)
     currWindowHWND = pywinauto.win32functions.GetForegroundWindow()
     userDict['userMouseX'] = userMouseX
     userDict['userMouseY'] = userMouseY
     userDict['userWindowHWND'] = currWindowHWND
+#    print ('Saving usermouse at X: ' + str(userDict['userMouseX']) + ' Y: ' + str(userDict['userMouseY']))
     return userDict
 
 def restoreUserState(userDict):
     currWindowHWND = pywinauto.win32functions.GetForegroundWindow()
-    print(currWindowHWND)
-    print (noxHWND)
-    if(currWindowHWND == noxHWND):
-        pywinauto.win32functions.SetForegroundWindow(userDict['userWindowHWND'])
-        pywinauto.mouse.move(coords=(userDict['userMouseX'], userDict['userMouseY']))
+#    print ('Restoring usermouse to X: ' + str(userDict['userMouseX']) + ' Y: ' + str(userDict['userMouseY']))
+    pywinauto.win32functions.SetForegroundWindow(userDict['userWindowHWND'])
+    pywinauto.mouse.move(coords=(userDict['userMouseX'], userDict['userMouseY']))
 
 def checkPoints(newPoint, matched, w, h):
     isNewPoint = True
@@ -227,7 +227,7 @@ def initialMatch():
         scaled_template = cv2.resize(initial_template, (0,0), fx=UIscale, fy=UIscale)
         w, h = scaled_template.shape[::-1]
 
-        matches = vision.scaled_find_template(template, 0.50, 'ENEMY', scales=scales)
+        matches = vision.scaled_find_template(template, 0.55, 'ENEMY', scales=scales)
 
         for pt in zip(*matches[::-1]):
             # add the template size to point
@@ -249,7 +249,10 @@ def initialMatch():
 def chooseEnemy(matched):
     randNumb = random.randint(0, len(matched)-1)
     print ('Picked: ' + str(matched[randNumb]))
+    userDict = storeUserState()
     pywinauto.mouse.click(coords=(matched[randNumb][0],matched[randNumb][1]))
+    time.sleep(0.5)
+    restoreUserState(userDict)
     del matched[randNumb]
     startBattle()
     inBattle()
@@ -273,15 +276,18 @@ def switchFleet():
         else:
             points.append(newRealPoint)
     if(len(points) > 0):
+        userDict = storeUserState()
         pywinauto.mouse.click(coords=(points[0]))
+        restoreUserState(userDict)
 
 def chooseBoss(noxWindowDimensions):
     points = []
-
     # this finds an empty tile to click
     # Find midpoint of screen
     # Left click mouse, drag down to bottom of screen, let go of mouse
-    templateArray = matchTemplate(noxWindowDimensions, 'empty', 0.70, 'EMPTY')
+    templateArray = matchTemplate(noxWindowDimensions, 'empty', 0.60, 'EMPTY')
+
+    #TODO check empty tile clicking and movement
     for pt in zip(*templateArray['matches'][::-1]):
         # add the template size to point
         realPointX = pt[0] + int(templateArray['width']*0.5)
@@ -295,12 +301,20 @@ def chooseBoss(noxWindowDimensions):
         else:
             points.append(newRealPoint)
     if(len(points) > 0):
+        userDict = storeUserState()
         pywinauto.mouse.click(coords=(points[0]))
+        restoreUserState(userDict)
+        userDict = storeUserState()
         pywinauto.mouse.press(button='left', coords=(int(noxWindowDimensions['width']/2),int(noxWindowDimensions['height']/2)))
+        restoreUserState(userDict)
         time.sleep(2)
+        userDict = storeUserState()
         pywinauto.mouse.move(coords=(int(noxWindowDimensions['width']/2),int(noxWindowDimensions['height'])))
+        restoreUserState(userDict)
         time.sleep(2)
+        userDict = storeUserState()
         pywinauto.mouse.release(button='left', coords=(int(noxWindowDimensions['width']/2),int(noxWindowDimensions['height'])))
+        restoreUserState(userDict)
         points.clear()
 
     # This finds the boss
@@ -319,8 +333,9 @@ def chooseBoss(noxWindowDimensions):
         else:
             points.append(newRealPoint)
     if(len(points) > 0):
+        userDict = storeUserState()
         pywinauto.mouse.click(coords=(points[0]))
-        time.sleep(9)
+        restoreUserState(userDict)
         startBattle()
         inBattle()
         endBattle()
@@ -353,7 +368,9 @@ def startBattle():
 
     print ('\nEntered fleet manager')
     #TODO make sure auto is checked here
+    userDict = storeUserState()
     pywinauto.mouse.click(coords=(points[0]))
+    restoreUserState(userDict)
 
 def inBattle():
     templateArray = matchTemplate(noxWindowDimensions, 'endBattle', 0.70, 'UI')
@@ -361,8 +378,10 @@ def inBattle():
     points = []
     battling = True
     sys.stdout.write('Battling')
+
     while(battling == True):
         consolePrint()
+        userDict = storeUserState()
         for pt in zip(*templateArray['matches'][::-1]):
             realPointX = pt[0] + int(templateArray['width']*0.5)
             realPointY = pt[1] + int(templateArray['height']*1.5)
@@ -383,10 +402,16 @@ def inBattle():
 
     print ('\nBattle ended')
     pywinauto.mouse.click(coords=(points[0]))
-    time.sleep(5)
+    restoreUserState(userDict)
+    #TODO check for next point incase of elite ship
+    time.sleep(2)
+    userDict = storeUserState()
     pywinauto.mouse.click(coords=(points[0]))
+    restoreUserState(userDict)
     time.sleep(3)
+    userDict = storeUserState()
     pywinauto.mouse.click(coords=(points[0]))
+    restoreUserState(userDict)
 
 def endBattle():
     templateArray = matchTemplate(noxWindowDimensions, 'confirm', 0.70, 'UI')
@@ -402,10 +427,12 @@ def endBattle():
             isNewPoint = checkPoints(newRealPoint, points, templateArray['width'], templateArray['height'])
             if (isNewPoint == True):
                 points.append(newRealPoint)
+
         else:
             points.append(newRealPoint)
-
+            userDict = storeUserState()
     pywinauto.mouse.click(coords=(points[0]))
+    restoreUserState(userDict)
     time.sleep(5)
 
 def consolePrint():
@@ -419,28 +446,22 @@ def consolePrint():
         sys.stdout.flush()
         time.sleep(CONSOLE_SLEEP_TIME)
 
-
-userDict = {}
-noxDict = {}
 userDict = storeUserState()
 
 noxDict = getWindowObject(APP_PATH)
 bringNoxToFront(noxDict['allElements'])
 noxWindowDimensions = getWindowDimensions(noxDict['mainWindow'])
-
 noxHWND = getHWND()
-time.sleep(6)
-restoreUserState(userDict)
 
-# matched = initialMatch()
-#
-# if(isKizunaSP4 == True and len(matched) >= 5):
-#     for x in range(0, 5):
-#         matched = chooseEnemy(matched)
-#     switchFleet()
-#     chooseBoss(noxWindowDimensions)
-# else:
-#     print ('Error less than 5 boats selected')
-#
-# print('End of script, following array should be left over enemies:')
-# print(matched)
+matched = initialMatch()
+
+if(isKizunaSP4 == True and len(matched) >= 5):
+    for x in range(0, 5):
+        matched = chooseEnemy(matched)
+    switchFleet()
+    chooseBoss(noxWindowDimensions)
+else:
+    print ('Error less than 5 boats selected')
+
+print('End of script, following array should be left over enemies:')
+print(matched)
