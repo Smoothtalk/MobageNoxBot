@@ -19,6 +19,8 @@ LOADING_DOT = '.'
 BACKSPACE = '\b \b'
 isKizunaSP4 = True
 TEST = False
+fuckOnagda = True
+fuckBen = True
 
 class Vision:
     def __init__(self):
