@@ -151,8 +151,6 @@ def getWindowDimensions(noxWindow):
     x = noxWindow.rectangle().left
     y = noxWindow.rectangle().top
 
-    #TODO force window into certain dimensions before -30 pixel operation
-
     # print ("top left co-ords:" + str(x) + 'x' + str(y))
     # print ("size:" + str(w) + 'x' + str(h))
 
@@ -293,7 +291,6 @@ def chooseBoss(noxWindowDimensions):
     # Left click mouse, drag down to bottom of screen, let go of mouse
     templateArray = matchTemplate(noxWindowDimensions, 'city', 0.70, 'EMPTY')
 
-    #TODO check empty tile clicking and movement
     for pt in zip(*templateArray['matches'][::-1]):
         # add the template size to point
         realPointX = pt[0] + int(templateArray['width']*0.5) + noxWindowDimensions['left']
@@ -487,4 +484,5 @@ if(TEST == False):
     print('End of script, following array should be left over enemies:')
     print(matched)
 else:
+    print('TESTING MODE - YOU SHOULDN\'T BE HERE')
     chooseBoss(noxWindowDimensions)
