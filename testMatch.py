@@ -13,19 +13,19 @@ from PIL import Image
 
 APP_PATH = "C:\\Program Files\\Nox\\bin\\Nox.exe"
 UI_WIDTH_720 = 1280
-SHOW_MATCH = False
+SHOW_MATCH = True
 APPBAR_H = 32
 CONSOLE_SLEEP_TIME = 0.2
 LOADING_DOT = '.'
 BACKSPACE = '\b \b'
-TESTING_MODE = False
+TESTING_MODE = True
 fuckOnagda = True
 fuckBen = True
 
 class Vision:
     def __init__(self):
         self.enemy_templates = {
-
+            'BigBS'       : 'assets/BisBS.png'
         }
         self.non_enemy_templates = {
             'T4-Box'      : 'assets/T4-Box.png',
@@ -36,7 +36,7 @@ class Vision:
             'switch'      : 'assets/switch.png'
         }
         self.empty_tile_templates = {
-            'city'      : 'assets/City.png'
+            'PLACEHOLDER'      : 'assets/PLACEHOLDER.png'
         }
 
         self.templates = { k: cv2.imread(v, 0) for (k, v) in self.enemy_templates.items() }
@@ -118,6 +118,7 @@ class Vision:
                 self.refresh_frame()
 
             image = self.frame
+        # Something bad about self.templates
         return self.match_template(
             image,
             self.templates[name],
@@ -483,5 +484,5 @@ if(TESTING_MODE == False):
     print('End of script, following array should be left over enemies:')
     print(matched)
 else:
-    print('TESTING MODE - YOU SHOULDN\'T BE HERE')
-    chooseBoss(noxWindowDimensions)
+    #print('TESTING MODE - YOU SHOULDN\'T BE HERE')
+    matched = initialMatch()
