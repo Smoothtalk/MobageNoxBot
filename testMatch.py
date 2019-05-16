@@ -11,9 +11,10 @@ from matplotlib import pyplot as plt
 from mss import mss
 from PIL import Image
 
-APP_PATH = "D:\\Program Files\\Nox\\bin\\Nox.exe"
+APP_PATH = "C:\\Program Files\\Nox\\bin\\Nox.exe"
 UI_WIDTH_720 = 1280
 SHOW_MATCH = False
+APPBAR_H = 32
 CONSOLE_SLEEP_TIME = 0.2
 LOADING_DOT = '.'
 BACKSPACE = '\b \b'
@@ -108,7 +109,7 @@ class Vision:
                     for pt in zip(*matches[::-1]):
                         cv2.rectangle(image, pt, (pt[0] + w, pt[1] + h), (0,255,255), 1)
                         midpointX = int(pt[0] + (0.5*w))
-                        midpointY = int(pt[1] + (0.5*h)+30)
+                        midpointY = int(pt[1] + (0.5*h) + APPBAR_H)
                     cv2.imshow('image',image)
                     cv2.waitKey(0)
                     cv2.destroyAllWindows()
