@@ -25,7 +25,7 @@ fuckBen = True
 class Vision:
     def __init__(self):
         self.enemy_templates = {
-            'BigBS'       : 'assets/BisBS.png'
+            'MedBS'       : 'assets/MedBS.png'
         }
         self.non_enemy_templates = {
             'T4-Box'      : 'assets/T4-Box.png',
@@ -39,7 +39,7 @@ class Vision:
             'PLACEHOLDER'      : 'assets/PLACEHOLDER.png'
         }
 
-        self.templates = { k: cv2.imread(v, 0) for (k, v) in self.enemy_templates.items() }
+        self.enemy_templates = { k: cv2.imread(v, 0) for (k, v) in self.enemy_templates.items() }
         self.nonEnemyTemplates = { k: cv2.imread(v, 0) for (k, v) in self.non_enemy_templates.items() }
         self.emptyTileTemplates = { k: cv2.imread(v, 0) for (k, v) in self.empty_tile_templates.items() }
         self.screen = mss()
@@ -86,7 +86,7 @@ class Vision:
 
         # try catch for KeyError and each error try a different array
         if(templateSet == 'ENEMY'):
-            initial_template = self.templates[name]
+            initial_template = self.enemy_templates[name]
         elif(templateSet == 'EMPTY'):
             initial_template = self.emptyTileTemplates[name]
         else:
@@ -222,12 +222,12 @@ def initialMatch():
     UIscale = vision.find_scale(noxWindowDimensions['width'])
     scales = [UIscale]
 
-    for template in vision.templates:
-        initial_template = vision.templates[template]
+    for template in vision.enemy_templates:
+        initial_template = vision.enemy_templates[template]
         scaled_template = cv2.resize(initial_template, (0,0), fx=UIscale, fy=UIscale)
         w, h = scaled_template.shape[::-1]
 
-        matches = vision.scaled_find_template(template, 0.55, 'ENEMY', scales=scales)
+        matches = vision.scaled_find_template(template, 0.75, 'ENEMY', scales=scales)
 
         for pt in zip(*matches[::-1]):
             # add the template size to point
