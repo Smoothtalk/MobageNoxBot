@@ -18,33 +18,29 @@ APPBAR_H = 32
 CONSOLE_SLEEP_TIME = 0.2
 LOADING_DOT = '.'
 BACKSPACE = '\b \b'
-isKizunaSP4 = True
-TEST = False
+TESTING_MODE = False
 fuckOnagda = True
 fuckBen = True
 
 class Vision:
     def __init__(self):
-        self.static_templates = {
-            'Kizuna1'     : 'assets/KZ1.png',
-            'Kizuna2'     : 'assets/KZ2.png',
-            'Kizuna3'     : 'assets/KZ3.png'
+        self.enemy_templates = {
+
         }
-        self.non_enemy_static_templates = {
+        self.non_enemy_templates = {
             'T4-Box'      : 'assets/T4-Box.png',
             'Gear'        : 'assets/Gear.png',
             'startBattle' : 'assets/BattleStart.png',
             'endBattle'   : 'assets/BtFin.png',
             'confirm'     : 'assets/Confirm.png',
-            'giantKizuna' : 'assets/giantKizuna.png',
             'switch'      : 'assets/switch.png'
         }
         self.empty_tile_templates = {
             'city'      : 'assets/City.png'
         }
 
-        self.templates = { k: cv2.imread(v, 0) for (k, v) in self.static_templates.items() }
-        self.nonEnemyTemplates = { k: cv2.imread(v, 0) for (k, v) in self.non_enemy_static_templates.items() }
+        self.templates = { k: cv2.imread(v, 0) for (k, v) in self.enemy_templates.items() }
+        self.nonEnemyTemplates = { k: cv2.imread(v, 0) for (k, v) in self.non_enemy_templates.items() }
         self.emptyTileTemplates = { k: cv2.imread(v, 0) for (k, v) in self.empty_tile_templates.items() }
         self.screen = mss()
         self.frame = None
@@ -326,7 +322,7 @@ def chooseBoss(noxWindowDimensions):
         points.clear()
 
     # This finds the boss
-    templateArray = matchTemplate(noxWindowDimensions, 'giantKizuna', 0.70, 'UI')
+    # templateArray = matchTemplate(noxWindowDimensions, 'giantKizuna', 0.70, 'UI')
 
     for pt in zip(*templateArray['matches'][::-1]):
         # add the template size to point
@@ -473,10 +469,10 @@ bringNoxToFront(noxDict['allElements'])
 noxWindowDimensions = getWindowDimensions(noxDict['mainWindow'])
 noxHWND = getHWND()
 
-if(TEST == False):
+if(TESTING_MODE == False):
     matched = initialMatch()
 
-    if(isKizunaSP4 == True and len(matched) >= 5):
+    if(len(matched) >= 5):
         for x in range(0, 5):
             matched = chooseEnemy(matched)
         switchFleet()
