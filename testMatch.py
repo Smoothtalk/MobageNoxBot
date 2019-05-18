@@ -38,7 +38,8 @@ class Vision:
             'startBattle' : 'assets/BattleStart.png',
             'endBattle'   : 'assets/BtFin.png',
             'confirm'     : 'assets/Confirm.png',
-            'switch'      : 'assets/switch.png'
+            'switch'      : 'assets/switch.png',
+            'Ambush'      : 'assets/Ambush.png'
         }
         self.empty_tile_templates = {
             'PLACEHOLDER' : 'assets/PLACEHOLDER.png'
@@ -289,7 +290,7 @@ def matchShips(priorityAreas):
         scaled_template = cv2.resize(initial_template, (0,0), fx=UIscale, fy=UIscale)
         w, h = scaled_template.shape[::-1]
 
-        matches = vision.scaled_find_template(template, 0.45, 'ENEMY', scales=scales)
+        matches = vision.scaled_find_template(template, 0.40, 'ENEMY', scales=scales)
 
         for pt in zip(*matches[::-1]):
             # add the template size to point
@@ -356,6 +357,9 @@ def switchFleet():
         ok = windll.user32.BlockInput(False) #disable block
         restoreUserState(userDict)
 
+def moveScreenDown():
+    print('stub')
+
 def chooseBoss(noxWindowDimensions):
     points = []
     # this finds an empty tile to click
@@ -419,13 +423,37 @@ def chooseBoss(noxWindowDimensions):
         inBattle()
         endBattle()
 
+def checkForAmushes():
+    isAmbush = False
+    templateArray = matchTemplate(noxWindowDimensions, 'Ambush', 0.70, 'UI')
+
+    points = []
+    for pt in zip(*templateArray['matches'][::-1]):
+        # add the template size to point
+        realPointX = pt[0] + int(templateArray['width']*0.5) + noxWindowDimensions['left']
+        realPointY = pt[1] + int(templateArray['height']*0.5) + noxWindowDimensions['top']
+        newRealPoint = (realPointX,realPointY)
+
+        if(len(points) >= 1):
+            isNewPoint = checkPoints(newRealPoint, points, templateArray['width'], templateArray['height'])
+            if (isNewPoint == True):
+                points.append(newRealPoint)
+        else:
+            points.append(newRealPoint)
+
+    if(len(points) > 0):
+        isAmbush = True
+
+    return isAmbush
+
 def startBattle():
     templateArray = matchTemplate(noxWindowDimensions, 'startBattle', 0.70, 'UI')
 
+    isAmbush = checkForAmushes()
     points = []
     moving = True
     sys.stdout.write('Moving')
-    while(moving == True):
+    while(moving == True and isAmbush == False):
         consolePrint()
         for pt in zip(*templateArray['matches'][::-1]):
             # add the template size to point
@@ -443,6 +471,7 @@ def startBattle():
         if(len(points) > 0):
             moving = False
 
+        isAmbush = checkForAmushes()
         templateArray = matchTemplate(noxWindowDimensions, 'startBattle', 0.70, 'UI')
 
     print ('\nEntered fleet manager')
@@ -551,7 +580,7 @@ if(TESTING_MODE == False):
         switchFleet()
         chooseBoss(noxWindowDimensions)
     else:
-        print ('Error less than 5 boats selected')
+        print ('Error less than 4 boats selected')
 
     print('End of script, following array should be left over enemies:')
     print(matched)
@@ -559,7 +588,18 @@ else:
     #print('TESTING MODE - YOU SHOULDN\'T BE HERE')
     priorityAreas = findPrioritySpace()
     ships, priorityShips = matchShips(priorityAreas)
-    print('Found enemies at these positions: ')
-    print(ships)
-    print('Found priorityShips at: ')
-    print(priorityShips)
+    count = 0
+
+    while(count < 3):
+        if(len(priorityShips) > 0):
+            priorityShips = chooseEnemy(priorityShips)
+        elif(len(ships) > 0):
+            ships = chooseEnemy(ships)
+        ships, priorityShips = matchShips(priorityAreas)
+        print ('Priority Ships Locations: ')
+        print (priorityShips)
+        print ('Ship Locations: ')
+        print (ships)
+        count += 1
+    # switchFleet()
+    #chooseBoss(noxWindowDimensions)
