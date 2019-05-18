@@ -21,6 +21,7 @@ BACKSPACE = '\b \b'
 TESTING_MODE = True
 fuckOnagda = True
 fuckBen = True
+ADJENCENCY_THRESHOLD = 0.5
 
 class Vision:
     def __init__(self):
@@ -199,14 +200,16 @@ def checkPoints(newPoint, matched, w, h):
     return isNewPoint
 
 def checkPriority(newPoint, priorityAreas, w, h):
-    print('ship: ' + str(newPoint))
-    print('x zone: ' + str(priorityAreas[0]))
-    print('y zone: ' + str(priorityAreas[1]))
-    if(abs(newPoint[0] - priorityAreas[0]) < w):
-        print ('ship in y zone')
-    if(abs(newPoint[1] - priorityAreas[1]) < h):
-        print ('ship in x zone')
-    print('\n')
+    isImportantShip = False
+    if(abs(newPoint[0] - priorityAreas[0]) < w * ADJENCENCY_THRESHOLD):
+        isImportantShip = True
+    if(abs(newPoint[1] - priorityAreas[1]) < h * ADJENCENCY_THRESHOLD):
+        isImportantShip = True
+
+    if(isImportantShip == True):
+        return newPoint
+    else:
+        return None
 
 def matchTemplate(noxWindowDimensions, templateName, matchPercentage, templateSet):
     returnDict = {}
@@ -274,6 +277,7 @@ def findPrioritySpace():
 
 def matchShips(priorityAreas):
     tempMatches = []
+    priorityShips = []
     vision = Vision()
     vision.setMonitor(noxWindowDimensions)
 
@@ -294,15 +298,25 @@ def matchShips(priorityAreas):
             newRealPoint = (realPointX,realPointY)
 
             if(len(tempMatches) >= 1):
-                isNewPoint = checkPoints(newRealPoint, tempMatches, w, h)
-                if (isNewPoint == True):
-                    tempMatches.append(newRealPoint)
-                    checkPriority(newRealPoint, priorityAreas, w, h)
+                isNewShip = checkPoints(newRealPoint, tempMatches, w, h)
+                isNewPriorityShip = checkPoints(newRealPoint, priorityShips, w, h)
+                if (isNewShip == True and isNewPriorityShip == True):
+                    isImportantShip = checkPriority(newRealPoint, priorityAreas, w, h)
+                    if(isImportantShip == None):
+                        tempMatches.append(newRealPoint)
+                    else:
+                        priorityShips.append(newRealPoint)
             else: #first point
-                tempMatches.append(newRealPoint)
-                checkPriority(newRealPoint, priorityAreas, w, h)
+                isNewShip = checkPoints(newRealPoint, tempMatches, w, h)
+                isNewPriorityShip = checkPoints(newRealPoint, priorityShips, w, h)
+                if (isNewShip == True and isNewPriorityShip == True):
+                    isImportantShip = checkPriority(newRealPoint, priorityAreas, w, h)
+                    if(isImportantShip == None):
+                        tempMatches.append(newRealPoint)
+                    else:
+                        priorityShips.append(newRealPoint)
 
-    return tempMatches
+    return tempMatches, priorityShips
 
 def chooseEnemy(matched):
     randNumb = random.randint(0, len(matched)-1)
@@ -531,8 +545,8 @@ noxHWND = getHWND()
 if(TESTING_MODE == False):
     matched = matchShips()
 
-    if(len(matched) >= 5):
-        for x in range(0, 5):
+    if(len(matched) >= 4):
+        for x in range(0, 4):
             matched = chooseEnemy(matched)
         switchFleet()
         chooseBoss(noxWindowDimensions)
@@ -544,6 +558,8 @@ if(TESTING_MODE == False):
 else:
     #print('TESTING MODE - YOU SHOULDN\'T BE HERE')
     priorityAreas = findPrioritySpace()
-    ships = matchShips(priorityAreas)
+    ships, priorityShips = matchShips(priorityAreas)
     print('Found enemies at these positions: ')
     print(ships)
+    print('Found priorityShips at: ')
+    print(priorityShips)
