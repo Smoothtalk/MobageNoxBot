@@ -39,7 +39,9 @@ class Vision:
             'endBattle'   : 'assets/BtFin.png',
             'confirm'     : 'assets/Confirm.png',
             'switch'      : 'assets/switch.png',
-            'Ambush'      : 'assets/Ambush.png'
+            'Ambush'      : 'assets/Ambush.png',
+            'EvadeBTN'    : 'assets/Evade.png',
+            'Evaded'      : 'assets/Evaded.png'
         }
         self.empty_tile_templates = {
             'PLACEHOLDER' : 'assets/PLACEHOLDER.png'
@@ -329,7 +331,7 @@ def chooseEnemy(matched):
     ok = windll.user32.BlockInput(False) #disable block
     restoreUserState(userDict)
     del matched[randNumb]
-    startBattle()
+    startBattle(matched[randNumb][0],matched[randNumb][1])
     inBattle()
     endBattle()
     return matched
@@ -358,6 +360,9 @@ def switchFleet():
         restoreUserState(userDict)
 
 def moveScreenDown():
+    print('stub')
+
+def continueMoving(shipX, shipY):
     print('stub')
 
 def chooseBoss(noxWindowDimensions):
@@ -446,14 +451,14 @@ def checkForAmushes():
 
     return isAmbush
 
-def startBattle():
+def startBattle(shipX, shipY):
     templateArray = matchTemplate(noxWindowDimensions, 'startBattle', 0.70, 'UI')
 
     isAmbush = checkForAmushes()
     points = []
     moving = True
     sys.stdout.write('Moving')
-    while(moving == True and isAmbush == False):
+    while(moving == True):
         consolePrint()
         for pt in zip(*templateArray['matches'][::-1]):
             # add the template size to point
@@ -472,6 +477,47 @@ def startBattle():
             moving = False
 
         isAmbush = checkForAmushes()
+        if(isAmbush == True):
+            # try and click Evade
+            templateArray = matchTemplate(noxWindowDimensions, 'EvadeBTN', 0.70, 'UI')
+
+            for pt in zip(*templateArray['matches'][::-1]):
+                # add the template size to point
+                realPointX = pt[0] + int(templateArray['width']*0.5) + noxWindowDimensions['left']
+                realPointY = pt[1] + int(templateArray['height']*0.5) + noxWindowDimensions['top']
+                newRealPoint = (realPointX,realPointY)
+
+                if(len(points) >= 1):
+                    isNewPoint = checkPoints(newRealPoint, points, templateArray['width'], templateArray['height'])
+                    if (isNewPoint == True):
+                        points.append(newRealPoint)
+                else:
+                    points.append(newRealPoint)
+            if(len(points) > 0):
+                userDict = storeUserState()
+                ok = windll.user32.BlockInput(True) #enable block
+                pywinauto.mouse.press(button='left', coords=(points[0]))
+                ok = windll.user32.BlockInput(False) #disable block
+                time.sleep(0.1)
+                templateArray = matchTemplate(noxWindowDimensions, 'Evaded', 0.70, 'UI')
+
+                for pt in zip(*templateArray['matches'][::-1]):
+                    # add the template size to point
+                    realPointX = pt[0] + int(templateArray['width']*0.5) + noxWindowDimensions['left']
+                    realPointY = pt[1] + int(templateArray['height']*0.5) + noxWindowDimensions['top']
+                    newRealPoint = (realPointX,realPointY)
+
+                    if(len(points) >= 1):
+                        isNewPoint = checkPoints(newRealPoint, points, templateArray['width'], templateArray['height'])
+                        if (isNewPoint == True):
+                            points.append(newRealPoint)
+                    else:
+                        points.append(newRealPoint)
+                if(len(points) > 0):
+                    continueMoving(shipX, shipY)
+                else:
+                    moving = False
+                    
         templateArray = matchTemplate(noxWindowDimensions, 'startBattle', 0.70, 'UI')
 
     print ('\nEntered fleet manager')
