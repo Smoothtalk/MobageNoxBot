@@ -225,7 +225,44 @@ def matchTemplate(noxWindowDimensions, templateName, matchPercentage, templateSe
     return returnDict
 
 def findPrioritySpace():
-    print ('stub')
+    tempMatches = []
+    priorityAreas = []
+    vision = Vision()
+    vision.setMonitor(noxWindowDimensions)
+
+    UIscale = vision.find_scale(noxWindowDimensions['width'])
+    scales = [UIscale]
+
+    for template in vision.landmarks:
+        initial_template = vision.landmarks[template]
+        scaled_template = cv2.resize(initial_template, (0,0), fx=UIscale, fy=UIscale)
+        w, h = scaled_template.shape[::-1]
+
+        matches = vision.scaled_find_template(template, 0.55, 'LANDMARKS', scales=scales)
+
+        for pt in zip(*matches[::-1]):
+            # add the template size to point
+            realPointX = pt[0] + int(w * 0.5) + noxWindowDimensions['left']
+            realPointY = pt[1] + int(h * 0.5) + noxWindowDimensions['top']
+            newRealPoint = (realPointX,realPointY)
+
+            if(len(tempMatches) >= 1):
+                isNewPoint = checkPoints(newRealPoint, tempMatches, w, h)
+                if (isNewPoint == True):
+                    tempMatches.append(newRealPoint)
+            else: #first point
+                tempMatches.append(newRealPoint)
+
+    if(tempMatches[0][0] < tempMatches[1][0]):
+        print('x')
+        priorityAreas.append(tempMatches[0][0] - 2 * (int(w * 0.5)))
+        priorityAreas.append(tempMatches[1][1])
+    else:
+        print('y')
+        priorityAreas.append(tempMatches[1][0] - 2 * (int(w * 0.5)))
+        priorityAreas.append(tempMatches[0][1])
+
+    return priorityAreas
 
 def initialMatch():
     tempMatches = []
@@ -498,4 +535,5 @@ if(TESTING_MODE == False):
     print(matched)
 else:
     #print('TESTING MODE - YOU SHOULDN\'T BE HERE')
-    matched = initialMatch()
+    matched = findPrioritySpace()
+    print(matched)
