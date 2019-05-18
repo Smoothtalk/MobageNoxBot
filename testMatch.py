@@ -27,7 +27,8 @@ class Vision:
         self.enemy_templates = {
             'BigBS'       : 'assets/BigBS.png',
             'MedBS'       : 'assets/MedBS.png',
-            'SmallBS'     : 'assets/SmallBS.png',
+            'BigCrus'     : 'assets/BigCrus.png',
+            'MedCrus'     : 'assets/MedCrus.png',
             'BigMoney'    : 'assets/BigMoney.png'
         }
         self.non_enemy_templates = {
@@ -191,12 +192,21 @@ def checkPoints(newPoint, matched, w, h):
     isNewPoint = True
     tempX = []
 
-    #check why 1000, 400 isn't in array
     for point in matched:
         if (abs(newPoint[0] - point[0]) < w):
             if(abs(newPoint[1] - point[1]) < h):
                 isNewPoint = False
     return isNewPoint
+
+def checkPriority(newPoint, priorityAreas, w, h):
+    print('ship: ' + str(newPoint))
+    print('x zone: ' + str(priorityAreas[0]))
+    print('y zone: ' + str(priorityAreas[1]))
+    if(abs(newPoint[0] - priorityAreas[0]) < w):
+        print ('ship in y zone')
+    if(abs(newPoint[1] - priorityAreas[1]) < h):
+        print ('ship in x zone')
+    print('\n')
 
 def matchTemplate(noxWindowDimensions, templateName, matchPercentage, templateSet):
     returnDict = {}
@@ -254,17 +264,15 @@ def findPrioritySpace():
                 tempMatches.append(newRealPoint)
 
     if(tempMatches[0][0] < tempMatches[1][0]):
-        print('x')
         priorityAreas.append(tempMatches[0][0] - 2 * (int(w * 0.5)))
         priorityAreas.append(tempMatches[1][1])
     else:
-        print('y')
         priorityAreas.append(tempMatches[1][0] - 2 * (int(w * 0.5)))
         priorityAreas.append(tempMatches[0][1])
 
     return priorityAreas
 
-def initialMatch():
+def matchShips(priorityAreas):
     tempMatches = []
     vision = Vision()
     vision.setMonitor(noxWindowDimensions)
@@ -277,7 +285,7 @@ def initialMatch():
         scaled_template = cv2.resize(initial_template, (0,0), fx=UIscale, fy=UIscale)
         w, h = scaled_template.shape[::-1]
 
-        matches = vision.scaled_find_template(template, 0.55, 'ENEMY', scales=scales)
+        matches = vision.scaled_find_template(template, 0.45, 'ENEMY', scales=scales)
 
         for pt in zip(*matches[::-1]):
             # add the template size to point
@@ -289,11 +297,11 @@ def initialMatch():
                 isNewPoint = checkPoints(newRealPoint, tempMatches, w, h)
                 if (isNewPoint == True):
                     tempMatches.append(newRealPoint)
+                    checkPriority(newRealPoint, priorityAreas, w, h)
             else: #first point
                 tempMatches.append(newRealPoint)
+                checkPriority(newRealPoint, priorityAreas, w, h)
 
-    print('Found enemies at these positions: ')
-    print(tempMatches)
     return tempMatches
 
 def chooseEnemy(matched):
@@ -521,7 +529,7 @@ noxWindowDimensions = getWindowDimensions(noxDict['mainWindow'])
 noxHWND = getHWND()
 
 if(TESTING_MODE == False):
-    matched = initialMatch()
+    matched = matchShips()
 
     if(len(matched) >= 5):
         for x in range(0, 5):
@@ -535,5 +543,7 @@ if(TESTING_MODE == False):
     print(matched)
 else:
     #print('TESTING MODE - YOU SHOULDN\'T BE HERE')
-    matched = findPrioritySpace()
-    print(matched)
+    priorityAreas = findPrioritySpace()
+    ships = matchShips(priorityAreas)
+    print('Found enemies at these positions: ')
+    print(ships)
